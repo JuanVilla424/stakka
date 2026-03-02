@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+*.pem
+CLAUDE.md
+MEMORY.md
+CONTEXT.md

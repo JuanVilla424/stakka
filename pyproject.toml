@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "stakka"
+version = "1.0.0"
+description = ""
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+bump2version = "^1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.0.1"
+pylint = "^3.3.0"
+yamllint = "^1.35.0"
+black = "^25.1.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
