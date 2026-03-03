@@ -1,11 +1,11 @@
 # stakka — Module Architecture
 
-## Overview
+## 📖 Overview
 
 Stakka is a Tetris clone built with Vite + TypeScript + Canvas 2D. No frameworks.
 All game state lives in typed classes. Rendering uses a single Canvas element.
 
-## Module Map
+## 🗂 Module Map
 
 | Module | File | Responsibility |
 |--------|------|---------------|
@@ -29,7 +29,7 @@ All game state lives in typed classes. Rendering uses a single Canvas element.
 | **Game** | `src/game.ts` | Central game loop, state machine (idle → playing → paused → game over) |
 | **Main** | `src/main.ts` | Entry point — wires all modules together, bootstraps the game |
 
-## Data Flow
+## 🔄 Data Flow
 
 ```
 main.ts
@@ -45,19 +45,19 @@ main.ts
        └─ Settings + Storage (persistence)
 ```
 
-## State Machine
+## ⚙️ State Machine
 
 ```
 idle → playing → paused → playing → game_over → idle
 ```
 
-## Build
+## 🔨 Build
 
 - `npm run build` → `dist/` (TypeScript → ES2022 → Vite tree-shake + minify)
 - Base path: `/stakka/` for GitHub Pages subdirectory hosting
 - Bundle: ~17KB gzip JS + ~3KB gzip CSS
 
-## Deployment
+## 🚀 Deployment
 
 GitHub Pages via `.github/workflows/deploy.yml` — auto-deploys on push to `main`.
 Live URL: https://juanvilla424.github.io/stakka/

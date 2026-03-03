@@ -9,7 +9,7 @@ A modern Tetris clone built with Vite + TypeScript + Canvas 2D.
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Status](https://img.shields.io/badge/Status-Active-green.svg)
 
-## Features
+## ✨ Features
 
 **Gameplay**
 - SRS rotation system with wall kicks and floor kicks
@@ -43,7 +43,7 @@ A modern Tetris clone built with Vite + TypeScript + Canvas 2D.
 - Master volume control
 - No external audio files required
 
-## Controls
+## 🎮 Controls
 
 ### Keyboard
 
@@ -68,14 +68,14 @@ A modern Tetris clone built with Vite + TypeScript + Canvas 2D.
 | Tap | Rotate clockwise |
 | Hold button (on-screen) | Hold piece |
 
-## Tech Stack
+## 🛠 Tech Stack
 
 - **Vite 6** — instant HMR, optimized production builds
 - **TypeScript 5.7** — strict mode, ES2022 target
 - **Canvas 2D** — 60fps rendering on a 10×20 grid
 - **Web Audio API** — procedural sound effects with volume control
 
-## Setup
+## 🚀 Setup
 
 ```bash
 npm install
@@ -84,7 +84,7 @@ npm run dev
 
 Open http://localhost:5173
 
-## Scripts
+## 📋 Scripts
 
 | Command | Description |
 |---------|-------------|
@@ -95,6 +95,6 @@ Open http://localhost:5173
 | `npx eslint src/` | Lint source files |
 | `npx tsc --noEmit` | Type-check without emitting |
 
-## License
+## 📄 License
 
 MIT
