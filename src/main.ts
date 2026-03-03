@@ -12,6 +12,8 @@ const app = document.getElementById('app') as HTMLDivElement
 
 const canvas = document.createElement('canvas')
 canvas.id = 'game-canvas'
+canvas.setAttribute('role', 'img')
+canvas.setAttribute('aria-label', 'Stakka game board')
 app.appendChild(canvas)
 
 const ui = new UIManager(app)

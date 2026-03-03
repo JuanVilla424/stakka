@@ -16,6 +16,7 @@ class MockElement {
   children: MockElement[] = []
   classList: MockClassList
   private _text: string = ''
+  private _attrs: Map<string, string> = new Map()
 
   constructor(tag: string) {
     this.tagName = tag.toLowerCase()
@@ -32,6 +33,14 @@ class MockElement {
         return classes.has(c)
       },
     }
+  }
+
+  setAttribute(name: string, value: string): void {
+    this._attrs.set(name, value)
+  }
+
+  getAttribute(name: string): string | null {
+    return this._attrs.get(name) ?? null
   }
 
   get textContent(): string {

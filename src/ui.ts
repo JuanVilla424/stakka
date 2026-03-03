@@ -17,20 +17,29 @@ export interface GameOverOptions {
 
 interface TouchBtnDef {
   label: string
+  ariaLabel: string
   action: GameAction
 }
 
 const TOUCH_ROW1: TouchBtnDef[] = [
-  { label: '←', action: GameAction.MOVE_LEFT },
-  { label: '↺', action: GameAction.ROTATE_CCW },
-  { label: '↻', action: GameAction.ROTATE_CW },
-  { label: '→', action: GameAction.MOVE_RIGHT },
+  { label: '←', ariaLabel: 'Move Left', action: GameAction.MOVE_LEFT },
+  {
+    label: '↺',
+    ariaLabel: 'Rotate Counter-Clockwise',
+    action: GameAction.ROTATE_CCW,
+  },
+  {
+    label: '↻',
+    ariaLabel: 'Rotate Clockwise',
+    action: GameAction.ROTATE_CW,
+  },
+  { label: '→', ariaLabel: 'Move Right', action: GameAction.MOVE_RIGHT },
 ]
 
 const TOUCH_ROW2: TouchBtnDef[] = [
-  { label: '▼', action: GameAction.SOFT_DROP },
-  { label: '⏬', action: GameAction.HARD_DROP },
-  { label: 'HOLD', action: GameAction.HOLD },
+  { label: '▼', ariaLabel: 'Soft Drop', action: GameAction.SOFT_DROP },
+  { label: '⏬', ariaLabel: 'Hard Drop', action: GameAction.HARD_DROP },
+  { label: 'HOLD', ariaLabel: 'Hold Piece', action: GameAction.HOLD },
 ]
 
 // Actions that fire continuously while the button is held
@@ -61,6 +70,7 @@ function buildTouchControls(): {
     for (const def of row) {
       const btn = el('button', 'touch-btn')
       btn.textContent = def.label
+      btn.setAttribute('aria-label', def.ariaLabel)
       buttons.push({ el: btn, action: def.action })
       rowEl.appendChild(btn)
     }
@@ -175,15 +185,21 @@ export class UIManager {
     container.appendChild(this.overlay)
 
     this.themeBtn = el('button', 'theme-toggle')
-    this.themeBtn.textContent =
-      themeManager.getThemeName() === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'
+    const isDark = themeManager.getThemeName() === 'dark'
+    this.themeBtn.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'
+    this.themeBtn.setAttribute(
+      'aria-label',
+      isDark ? 'Switch to light theme' : 'Switch to dark theme'
+    )
     if (typeof this.themeBtn.addEventListener === 'function') {
       this.themeBtn.addEventListener('click', () => {
         themeManager.toggle()
-        this.themeBtn.textContent =
-          themeManager.getThemeName() === 'dark'
-            ? '\u2600\uFE0F'
-            : '\uD83C\uDF19'
+        const nowDark = themeManager.getThemeName() === 'dark'
+        this.themeBtn.textContent = nowDark ? '\u2600\uFE0F' : '\uD83C\uDF19'
+        this.themeBtn.setAttribute(
+          'aria-label',
+          nowDark ? 'Switch to light theme' : 'Switch to dark theme'
+        )
       })
     }
     if (document.body) {
