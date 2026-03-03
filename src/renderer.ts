@@ -1,4 +1,9 @@
-import { TETROMINO_COLORS, TetrominoType, type Piece } from './piece'
+import {
+  TETROMINO_COLORS,
+  TETROMINO_SHAPES,
+  TetrominoType,
+  type Piece,
+} from './piece'
 import type { Board } from './board'
 
 export class Renderer {
@@ -6,12 +11,15 @@ export class Renderer {
   private cellSize: number
   private cols = 10
   private rows = 20
+  // horizontal pixel offset of the board within the canvas (panel width on each side)
+  private boardOffsetX: number
 
   constructor(canvas: HTMLCanvasElement, cellSize = 30) {
     this.ctx = canvas.getContext('2d')!
     this.cellSize = cellSize
-    canvas.width = this.cols * cellSize
-    canvas.height = this.rows * cellSize
+    this.boardOffsetX = 5 * cellSize // 150px panel on each side
+    canvas.width = 2 * this.boardOffsetX + this.cols * cellSize // 600px
+    canvas.height = this.rows * cellSize // 600px
   }
 
   clear(): void {
@@ -19,7 +27,7 @@ export class Renderer {
     this.ctx.fillRect(
       0,
       0,
-      this.cols * this.cellSize,
+      2 * this.boardOffsetX + this.cols * this.cellSize,
       this.rows * this.cellSize
     )
   }
@@ -68,7 +76,7 @@ export class Renderer {
 
     for (const block of shape) {
       if (block.y >= 2) {
-        const cx = block.x * cs
+        const cx = this.boardOffsetX + block.x * cs
         const cy = (block.y - 2) * cs
         this.ctx.beginPath()
         this.ctx.roundRect(cx + 1, cy + 1, cs - 2, cs - 2, 3)
@@ -84,27 +92,100 @@ export class Renderer {
     this.ctx.lineWidth = 0.5
     this.ctx.beginPath()
     for (let col = 0; col <= this.cols; col++) {
-      const x = col * this.cellSize
+      const x = this.boardOffsetX + col * this.cellSize
       this.ctx.moveTo(x, 0)
       this.ctx.lineTo(x, this.rows * this.cellSize)
     }
     for (let row = 0; row <= this.rows; row++) {
       const y = row * this.cellSize
-      this.ctx.moveTo(0, y)
-      this.ctx.lineTo(this.cols * this.cellSize, y)
+      this.ctx.moveTo(this.boardOffsetX, y)
+      this.ctx.lineTo(this.boardOffsetX + this.cols * this.cellSize, y)
     }
     this.ctx.stroke()
     this.ctx.restore()
   }
 
-  private drawCell(col: number, row: number, color: string): void {
-    this.ctx.save()
-    const x = col * this.cellSize
-    const y = row * this.cellSize
-    const size = this.cellSize
+  drawHoldPanel(holdPiece: TetrominoType | null, canHold: boolean): void {
+    const panelCenterX = this.boardOffsetX / 2
 
+    this.ctx.save()
+    this.ctx.fillStyle = '#888888'
+    this.ctx.font = 'bold 13px monospace'
+    this.ctx.textAlign = 'center'
+    this.ctx.fillText('HOLD', panelCenterX, 28)
+    this.ctx.restore()
+
+    if (holdPiece !== null) {
+      this.drawPiecePreview(holdPiece, panelCenterX, 90, canHold ? 1 : 0.4)
+    }
+  }
+
+  drawNextQueue(nextPieces: TetrominoType[]): void {
+    const boardRight = this.boardOffsetX + this.cols * this.cellSize
+    const panelCenterX = boardRight + this.boardOffsetX / 2
+
+    this.ctx.save()
+    this.ctx.fillStyle = '#888888'
+    this.ctx.font = 'bold 13px monospace'
+    this.ctx.textAlign = 'center'
+    this.ctx.fillText('NEXT', panelCenterX, 28)
+    this.ctx.restore()
+
+    for (let i = 0; i < nextPieces.length; i++) {
+      this.drawPiecePreview(nextPieces[i], panelCenterX, 72 + i * 100)
+    }
+  }
+
+  private drawPiecePreview(
+    type: TetrominoType,
+    centerX: number,
+    centerY: number,
+    alpha = 1
+  ): void {
+    const shape = TETROMINO_SHAPES[type][0]
+    const ps = 22 // preview cell size in pixels
+
+    // Find bounding box of the shape
+    let minR = shape.length,
+      maxR = -1,
+      minC = shape[0].length,
+      maxC = -1
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (shape[r][c]) {
+          if (r < minR) minR = r
+          if (r > maxR) maxR = r
+          if (c < minC) minC = c
+          if (c > maxC) maxC = c
+        }
+      }
+    }
+
+    const pieceW = (maxC - minC + 1) * ps
+    const pieceH = (maxR - minR + 1) * ps
+    const startX = centerX - pieceW / 2
+    const startY = centerY - pieceH / 2
+
+    this.ctx.save()
+    this.ctx.globalAlpha = alpha
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (shape[r][c]) {
+          this.drawCellAt(
+            startX + (c - minC) * ps,
+            startY + (r - minR) * ps,
+            ps,
+            TETROMINO_COLORS[type]
+          )
+        }
+      }
+    }
+    this.ctx.restore()
+  }
+
+  private drawCellAt(x: number, y: number, size: number, color: string): void {
     const path = new Path2D()
-    path.roundRect(x + 1, y + 1, size - 2, size - 2, 3)
+    path.roundRect(x + 1, y + 1, size - 2, size - 2, 2)
 
     const gradient = this.ctx.createLinearGradient(x, y, x, y + size)
     gradient.addColorStop(0, this.lighten(color, 0.3))
@@ -116,17 +197,29 @@ export class Renderer {
     this.ctx.strokeStyle = 'rgba(0,0,0,0.3)'
     this.ctx.lineWidth = 1
     this.ctx.stroke(path)
+  }
 
-    this.ctx.restore()
+  private drawCell(col: number, row: number, color: string): void {
+    this.drawCellAt(
+      this.boardOffsetX + col * this.cellSize,
+      row * this.cellSize,
+      this.cellSize,
+      color
+    )
   }
 
   drawFrame(
     board: Board,
     piece: Piece | null,
     ghostY: number | null = null,
-    lockProgress = 0
+    lockProgress = 0,
+    holdPiece: TetrominoType | null = null,
+    canHold = true,
+    nextPieces: TetrominoType[] = []
   ): void {
     this.clear()
+    this.drawHoldPanel(holdPiece, canHold)
+    this.drawNextQueue(nextPieces)
     this.drawBoard(board)
     if (piece && ghostY !== null) {
       this.drawGhostPiece(piece, ghostY)
