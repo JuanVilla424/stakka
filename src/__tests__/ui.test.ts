@@ -68,8 +68,10 @@ describe('UIManager', () => {
   })
 
   it('creates overlay element appended to container', () => {
-    expect(container.children).toHaveLength(1)
+    // overlay + touch-controls
+    expect(container.children).toHaveLength(2)
     expect(container.children[0].id).toBe('overlay')
+    expect(container.children[1].id).toBe('touch-controls')
   })
 
   it('overlay has class "overlay"', () => {
@@ -173,5 +175,20 @@ describe('UIManager', () => {
   it('overlay has three child screens', () => {
     const overlay = container.children[0]
     expect(overlay.children).toHaveLength(3)
+  })
+
+  it('showTouchControls() adds visible class to touch-controls', () => {
+    ui.showTouchControls()
+    expect(container.children[1].classList.contains('visible')).toBe(true)
+  })
+
+  it('hideTouchControls() removes visible class from touch-controls', () => {
+    ui.showTouchControls()
+    ui.hideTouchControls()
+    expect(container.children[1].classList.contains('visible')).toBe(false)
+  })
+
+  it('pollTouchActions() returns empty array initially', () => {
+    expect(ui.pollTouchActions()).toEqual([])
   })
 })

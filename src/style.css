@@ -25,10 +25,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: none;
 }
 
 #game-canvas {
   display: block;
+  touch-action: none;
 }
 
 /* ── Overlay ── */
@@ -166,6 +168,55 @@ body {
   color: #ffffff;
   font-weight: bold;
   font-size: 18px;
+}
+
+/* ── Touch Controls ── */
+.touch-controls {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 12px;
+  gap: 8px;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.touch-controls.visible {
+  display: flex;
+}
+
+.touch-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.touch-btn {
+  min-width: 56px;
+  min-height: 56px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 20px;
+  font-family: 'Courier New', Courier, monospace;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 80ms ease;
+}
+
+.touch-btn:active {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 @media (prefers-reduced-motion: reduce) {

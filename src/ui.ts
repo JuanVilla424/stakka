@@ -1,7 +1,57 @@
+import { GameAction } from './input'
+
 export interface GameOverStats {
   score: number
   level: number
   lines: number
+}
+
+interface TouchBtnDef {
+  label: string
+  action: GameAction
+}
+
+const TOUCH_ROW1: TouchBtnDef[] = [
+  { label: '←', action: GameAction.MOVE_LEFT },
+  { label: '↺', action: GameAction.ROTATE_CCW },
+  { label: '↻', action: GameAction.ROTATE_CW },
+  { label: '→', action: GameAction.MOVE_RIGHT },
+]
+
+const TOUCH_ROW2: TouchBtnDef[] = [
+  { label: '▼', action: GameAction.SOFT_DROP },
+  { label: '⏬', action: GameAction.HARD_DROP },
+  { label: 'HOLD', action: GameAction.HOLD },
+]
+
+// Actions that fire continuously while the button is held
+const CONTINUOUS_TOUCH_ACTIONS = new Set<GameAction>([GameAction.SOFT_DROP])
+
+interface TouchBtnEntry {
+  el: HTMLElement
+  action: GameAction
+}
+
+function buildTouchControls(): {
+  container: HTMLElement
+  buttons: TouchBtnEntry[]
+} {
+  const container = el('div', 'touch-controls')
+  container.id = 'touch-controls'
+  const buttons: TouchBtnEntry[] = []
+
+  for (const row of [TOUCH_ROW1, TOUCH_ROW2]) {
+    const rowEl = el('div', 'touch-row')
+    for (const def of row) {
+      const btn = el('button', 'touch-btn')
+      btn.textContent = def.label
+      buttons.push({ el: btn, action: def.action })
+      rowEl.appendChild(btn)
+    }
+    container.appendChild(rowEl)
+  }
+
+  return { container, buttons }
 }
 
 function el(tag: string, className?: string): HTMLElement {
@@ -69,6 +119,9 @@ export class UIManager {
   private screenStart: HTMLElement
   private screenPause: HTMLElement
   private screenGameOver: HTMLElement
+  private touchControls: HTMLElement
+  private touchActionQueue: GameAction[] = []
+  private heldAction: GameAction | null = null
 
   constructor(container: HTMLElement) {
     this.overlay = el('div', 'overlay')
@@ -85,6 +138,56 @@ export class UIManager {
     this.overlay.appendChild(this.screenGameOver)
 
     this.hideAllScreens()
+
+    const { container: tc, buttons } = buildTouchControls()
+    this.touchControls = tc
+    container.appendChild(this.touchControls)
+    this.setupTouchButtons(buttons)
+  }
+
+  private setupTouchButtons(buttons: TouchBtnEntry[]): void {
+    for (const { el: btn, action } of buttons) {
+      if (typeof btn.addEventListener !== 'function') continue
+
+      btn.addEventListener(
+        'touchstart',
+        (e) => {
+          e.preventDefault()
+          this.touchActionQueue.push(action)
+          if (CONTINUOUS_TOUCH_ACTIONS.has(action)) {
+            this.heldAction = action
+          }
+        },
+        { passive: false }
+      )
+
+      const stopHold = (e: Event) => {
+        e.preventDefault()
+        if (this.heldAction === action) {
+          this.heldAction = null
+        }
+      }
+
+      btn.addEventListener('touchend', stopHold, { passive: false })
+      btn.addEventListener('touchcancel', stopHold, { passive: false })
+    }
+  }
+
+  showTouchControls(): void {
+    this.touchControls.classList.add('visible')
+  }
+
+  hideTouchControls(): void {
+    this.touchControls.classList.remove('visible')
+  }
+
+  pollTouchActions(): GameAction[] {
+    const actions = this.touchActionQueue.slice()
+    this.touchActionQueue = []
+    if (this.heldAction !== null) {
+      actions.push(this.heldAction)
+    }
+    return actions
   }
 
   private hideAllScreens(): void {
