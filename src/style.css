@@ -599,6 +599,236 @@ body {
   }
 }
 
+/* ── Start Screen Button Row ── */
+.start-btn-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── Settings Button on start/pause ── */
+.settings-open-btn {
+  padding: 8px 24px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.settings-open-btn:hover {
+  background: var(--control-bg);
+}
+
+/* ── Settings Screen ── */
+.settings-content {
+  max-width: 480px;
+  width: 100%;
+  padding: 0 16px 24px;
+  overflow-y: auto;
+  max-height: 100vh;
+  max-height: 100svh;
+  align-items: stretch;
+}
+
+.settings-title {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent-glow);
+  text-align: center;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.settings-section-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.settings-label {
+  font-size: 13px;
+  color: var(--text);
+  letter-spacing: 1px;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+/* ── Slider ── */
+.slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.settings-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--accent-glow-soft);
+  transition: box-shadow 100ms ease;
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--accent-glow-soft);
+}
+
+.settings-slider:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.slider-value {
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 44px;
+  text-align: right;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* ── Theme choice buttons ── */
+.theme-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.theme-choice-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.theme-choice-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0, 240, 240, 0.08);
+}
+
+[data-theme='light'] .theme-choice-btn.active {
+  background: rgba(0, 102, 204, 0.08);
+}
+
+/* ── Toggle button ── */
+.toggle-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  min-width: 52px;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.toggle-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0, 240, 240, 0.08);
+}
+
+[data-theme='light'] .toggle-btn.active {
+  background: rgba(0, 102, 204, 0.08);
+}
+
+/* ── Settings action buttons ── */
+.settings-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding-top: 8px;
+}
+
+.settings-btn {
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.settings-btn:hover {
+  background: var(--control-bg);
+}
+
+.settings-btn-reset {
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+}
+
+.settings-btn-reset:hover {
+  background: var(--control-bg);
+  color: var(--text);
+}
+
 /* ── Orientation Warning ── */
 #orientation-warning {
   display: none;

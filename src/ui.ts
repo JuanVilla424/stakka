@@ -1,6 +1,7 @@
 import { GameAction } from './input'
 import { themeManager } from './theme'
 import { LeaderboardEntry } from './storage'
+import { settingsManager, GameSettings } from './settings'
 
 export interface GameOverStats {
   score: number
@@ -44,6 +45,7 @@ interface StartScreenRefs {
   screen: HTMLElement
   highScoreEl: HTMLElement
   leaderboardBtnEl: HTMLElement
+  settingsBtnEl: HTMLElement
 }
 
 function buildTouchControls(): {
@@ -87,6 +89,9 @@ function buildStartScreen(): StartScreenRefs {
   const leaderboardBtnEl = el('button', 'leaderboard-open-btn')
   leaderboardBtnEl.textContent = 'LEADERBOARD'
 
+  const settingsBtnEl = el('button', 'settings-open-btn')
+  settingsBtnEl.textContent = 'SETTINGS'
+
   const prompt = el('p', 'prompt')
   prompt.textContent = 'Press ENTER to Start'
 
@@ -112,16 +117,23 @@ function buildStartScreen(): StartScreenRefs {
     legend.appendChild(row)
   }
 
+  const btnRow = el('div', 'start-btn-row')
+  btnRow.appendChild(leaderboardBtnEl)
+  btnRow.appendChild(settingsBtnEl)
+
   content.appendChild(title)
   content.appendChild(highScoreEl)
-  content.appendChild(leaderboardBtnEl)
+  content.appendChild(btnRow)
   content.appendChild(prompt)
   content.appendChild(legend)
   screen.appendChild(content)
-  return { screen, highScoreEl, leaderboardBtnEl }
+  return { screen, highScoreEl, leaderboardBtnEl, settingsBtnEl }
 }
 
-function buildPauseScreen(): HTMLElement {
+function buildPauseScreen(): {
+  screen: HTMLElement
+  settingsBtnEl: HTMLElement
+} {
   const screen = el('div', 'overlay-screen')
   const content = el('div', 'overlay-content')
 
@@ -131,10 +143,14 @@ function buildPauseScreen(): HTMLElement {
   const prompt = el('p', 'prompt')
   prompt.textContent = 'Press ESC to Resume'
 
+  const settingsBtnEl = el('button', 'settings-open-btn')
+  settingsBtnEl.textContent = 'SETTINGS'
+
   content.appendChild(title)
   content.appendChild(prompt)
+  content.appendChild(settingsBtnEl)
   screen.appendChild(content)
-  return screen
+  return { screen, settingsBtnEl }
 }
 
 export class UIManager {
@@ -143,6 +159,7 @@ export class UIManager {
   private screenPause: HTMLElement
   private screenGameOver: HTMLElement
   private screenLeaderboard: HTMLElement
+  private screenSettings: HTMLElement
   private touchControls: HTMLElement
   private touchActionQueue: GameAction[] = []
   private heldAction: GameAction | null = null
@@ -150,6 +167,7 @@ export class UIManager {
   private highScoreEl: HTMLElement
   private nameInputEl: HTMLElement | null = null
   private onLeaderboardOpen?: () => void
+  private onSettingsOpen?: () => void
 
   constructor(container: HTMLElement) {
     this.overlay = el('div', 'overlay')
@@ -192,6 +210,7 @@ export class UIManager {
       screen: startScreen,
       highScoreEl,
       leaderboardBtnEl,
+      settingsBtnEl: startSettingsBtn,
     } = buildStartScreen()
     this.screenStart = startScreen
     this.highScoreEl = highScoreEl
@@ -203,7 +222,20 @@ export class UIManager {
       })
     }
 
-    this.screenPause = buildPauseScreen()
+    if (typeof startSettingsBtn.addEventListener === 'function') {
+      startSettingsBtn.addEventListener('click', () => {
+        this.onSettingsOpen?.()
+      })
+    }
+
+    const { screen: pauseScreen, settingsBtnEl: pauseSettingsBtn } =
+      buildPauseScreen()
+    this.screenPause = pauseScreen
+    if (typeof pauseSettingsBtn.addEventListener === 'function') {
+      pauseSettingsBtn.addEventListener('click', () => {
+        this.onSettingsOpen?.()
+      })
+    }
     this.overlay.appendChild(this.screenPause)
 
     this.screenGameOver = el('div', 'overlay-screen')
@@ -211,6 +243,9 @@ export class UIManager {
 
     this.screenLeaderboard = el('div', 'overlay-screen')
     this.overlay.appendChild(this.screenLeaderboard)
+
+    this.screenSettings = el('div', 'overlay-screen')
+    this.overlay.appendChild(this.screenSettings)
 
     this.hideAllScreens()
 
@@ -270,6 +305,7 @@ export class UIManager {
     this.screenPause.style.display = 'none'
     this.screenGameOver.style.display = 'none'
     this.screenLeaderboard.style.display = 'none'
+    this.screenSettings.style.display = 'none'
     if (this.nameInputEl) {
       if (typeof (this.nameInputEl as HTMLInputElement).blur === 'function') {
         ;(this.nameInputEl as HTMLInputElement).blur()
@@ -475,7 +511,258 @@ export class UIManager {
     this.onLeaderboardOpen = cb
   }
 
+  setOnSettingsOpen(cb: () => void): void {
+    this.onSettingsOpen = cb
+  }
+
+  showSettings(onBack?: () => void): void {
+    this.hideAllScreens()
+    this.screenSettings.textContent = ''
+
+    const content = el('div', 'overlay-content settings-content')
+
+    const title = el('h2', 'settings-title')
+    title.textContent = 'SETTINGS'
+    content.appendChild(title)
+
+    // ── Handling ──
+    const handlingSection = buildSettingsSection('HANDLING')
+    handlingSection.appendChild(
+      buildSlider('DAS', 'das', settingsManager.get('das'), 50, 300, 1, 'ms')
+    )
+    handlingSection.appendChild(
+      buildSlider('ARR', 'arr', settingsManager.get('arr'), 0, 100, 1, 'ms')
+    )
+    handlingSection.appendChild(
+      buildSlider('SDF', 'sdf', settingsManager.get('sdf'), 5, 40, 1, '×')
+    )
+    content.appendChild(handlingSection)
+
+    // ── Audio ──
+    const audioSection = buildSettingsSection('AUDIO')
+    audioSection.appendChild(
+      buildSlider(
+        'Master Vol',
+        'masterVolume',
+        settingsManager.get('masterVolume'),
+        0,
+        100,
+        1,
+        '%'
+      )
+    )
+    audioSection.appendChild(
+      buildSlider(
+        'SFX Vol',
+        'sfxVolume',
+        settingsManager.get('sfxVolume'),
+        0,
+        100,
+        1,
+        '%'
+      )
+    )
+    audioSection.appendChild(
+      buildSlider(
+        'Music Vol',
+        'musicVolume',
+        settingsManager.get('musicVolume'),
+        0,
+        100,
+        1,
+        '%'
+      )
+    )
+    content.appendChild(audioSection)
+
+    // ── Display ──
+    const displaySection = buildSettingsSection('DISPLAY')
+    displaySection.appendChild(buildThemeSelector(settingsManager.get('theme')))
+    displaySection.appendChild(
+      buildToggle(
+        'Ghost Piece',
+        'ghostPiece',
+        settingsManager.get('ghostPiece')
+      )
+    )
+    displaySection.appendChild(
+      buildToggle('Grid Lines', 'showGrid', settingsManager.get('showGrid'))
+    )
+    content.appendChild(displaySection)
+
+    // ── Actions ──
+    const actions = el('div', 'settings-actions')
+
+    const resetBtn = el('button', 'settings-btn settings-btn-reset')
+    resetBtn.textContent = 'Reset to Defaults'
+    if (typeof resetBtn.addEventListener === 'function') {
+      resetBtn.addEventListener('click', () => {
+        settingsManager.reset()
+        // Rebuild the settings screen with new defaults
+        this.showSettings(onBack)
+      })
+    }
+
+    const backBtn = el('button', 'settings-btn')
+    backBtn.textContent = 'Back'
+    if (typeof backBtn.addEventListener === 'function') {
+      backBtn.addEventListener('click', () => {
+        settingsManager.save()
+        onBack?.()
+      })
+    }
+
+    actions.appendChild(resetBtn)
+    actions.appendChild(backBtn)
+    content.appendChild(actions)
+
+    // Wire up all input elements
+    wireSettingsInputs(content)
+
+    this.screenSettings.appendChild(content)
+    this.screenSettings.style.display = 'flex'
+    this.overlay.classList.add('visible')
+  }
+
   hide(): void {
     this.overlay.classList.remove('visible')
   }
+}
+
+// ── Settings UI helpers ──
+
+function buildSettingsSection(label: string): HTMLElement {
+  const section = el('div', 'settings-section')
+  const heading = el('p', 'settings-section-label')
+  heading.textContent = label
+  section.appendChild(heading)
+  return section
+}
+
+function buildSlider(
+  label: string,
+  key: keyof GameSettings,
+  value: number,
+  min: number,
+  max: number,
+  step: number,
+  unit: string
+): HTMLElement {
+  const row = el('div', 'settings-row')
+  const lbl = el('label', 'settings-label')
+  lbl.textContent = label
+
+  const sliderWrap = el('div', 'slider-wrap')
+  const input = el('input', 'settings-slider') as HTMLInputElement
+  input.type = 'range'
+  input.min = String(min)
+  input.max = String(max)
+  input.step = String(step)
+  input.value = String(value)
+  input.dataset.settingsKey = key
+  input.dataset.settingsType = 'slider'
+
+  const valueEl = el('span', 'slider-value')
+  valueEl.textContent = String(value) + unit
+  input.dataset.unit = unit
+  input.dataset.valueEl = ''
+
+  if (typeof input.addEventListener === 'function') {
+    input.addEventListener('input', () => {
+      valueEl.textContent = input.value + unit
+    })
+  }
+
+  sliderWrap.appendChild(input)
+  sliderWrap.appendChild(valueEl)
+  row.appendChild(lbl)
+  row.appendChild(sliderWrap)
+  return row
+}
+
+function buildThemeSelector(current: string): HTMLElement {
+  const row = el('div', 'settings-row')
+  const lbl = el('label', 'settings-label')
+  lbl.textContent = 'Theme'
+
+  const btnGroup = el('div', 'theme-btn-group')
+  for (const mode of ['auto', 'dark', 'light'] as const) {
+    const btn = el(
+      'button',
+      'theme-choice-btn' + (current === mode ? ' active' : '')
+    )
+    btn.textContent = mode.charAt(0).toUpperCase() + mode.slice(1)
+    btn.dataset.settingsKey = 'theme'
+    btn.dataset.settingsType = 'theme'
+    btn.dataset.themeValue = mode
+    if (typeof btn.addEventListener === 'function') {
+      btn.addEventListener('click', () => {
+        btnGroup.querySelectorAll('.theme-choice-btn').forEach((b) => {
+          ;(b as HTMLElement).classList.remove('active')
+        })
+        btn.classList.add('active')
+      })
+    }
+    btnGroup.appendChild(btn)
+  }
+
+  row.appendChild(lbl)
+  row.appendChild(btnGroup)
+  return row
+}
+
+function buildToggle(
+  label: string,
+  key: keyof GameSettings,
+  value: boolean
+): HTMLElement {
+  const row = el('div', 'settings-row')
+  const lbl = el('label', 'settings-label')
+  lbl.textContent = label
+
+  const toggleBtn = el('button', 'toggle-btn' + (value ? ' active' : ''))
+  toggleBtn.textContent = value ? 'ON' : 'OFF'
+  toggleBtn.dataset.settingsKey = key
+  toggleBtn.dataset.settingsType = 'toggle'
+  if (typeof toggleBtn.addEventListener === 'function') {
+    toggleBtn.addEventListener('click', () => {
+      const isActive = toggleBtn.classList.toggle('active')
+      toggleBtn.textContent = isActive ? 'ON' : 'OFF'
+    })
+  }
+
+  row.appendChild(lbl)
+  row.appendChild(toggleBtn)
+  return row
+}
+
+function wireSettingsInputs(root: HTMLElement): void {
+  if (typeof root.querySelectorAll !== 'function') return
+
+  root
+    .querySelectorAll<HTMLInputElement>('[data-settings-key]')
+    .forEach((el) => {
+      const key = el.dataset.settingsKey as keyof GameSettings
+      const type = el.dataset.settingsType
+
+      if (type === 'slider') {
+        el.addEventListener('input', () => {
+          const val = parseInt(el.value, 10)
+          settingsManager.set(key, val as GameSettings[typeof key])
+        })
+      } else if (type === 'theme') {
+        el.addEventListener('click', () => {
+          const val = (el as HTMLElement).dataset.themeValue as
+            | 'auto'
+            | 'dark'
+            | 'light'
+          settingsManager.set('theme', val)
+        })
+      } else if (type === 'toggle') {
+        el.addEventListener('click', () => {
+          const isActive = (el as HTMLElement).classList.contains('active')
+          settingsManager.set(key, isActive as GameSettings[typeof key])
+        })
+      }
+    })
 }

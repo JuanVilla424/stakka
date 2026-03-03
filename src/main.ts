@@ -5,6 +5,8 @@ import { isTouchDevice } from './touch'
 import { audio, SoundEffect } from './audio'
 import { LayoutManager } from './layout'
 import { storageManager, LeaderboardEntry } from './storage'
+import { settingsManager } from './settings'
+import { themeManager } from './theme'
 
 const app = document.getElementById('app') as HTMLDivElement
 
@@ -36,6 +38,48 @@ function openLeaderboard(highlightIndex?: number): void {
 }
 
 ui.setOnLeaderboardOpen(() => openLeaderboard())
+
+// ── Settings wiring ──
+function applyAllSettings(): void {
+  const inputMgr = game.getInputManager()
+  inputMgr.setDasDelay(settingsManager.get('das'))
+  inputMgr.setArrRate(settingsManager.get('arr'))
+  audio.setMasterVolume(settingsManager.get('masterVolume') / 100)
+  audio.setSfxVolume(settingsManager.get('sfxVolume') / 100)
+  themeManager.setTheme(settingsManager.get('theme'))
+  const renderer = game.getRenderer()
+  renderer.setGhostEnabled(settingsManager.get('ghostPiece'))
+  renderer.setGridEnabled(settingsManager.get('showGrid'))
+}
+
+settingsManager.onChange('das', (v) => game.getInputManager().setDasDelay(v))
+settingsManager.onChange('arr', (v) => game.getInputManager().setArrRate(v))
+settingsManager.onChange('masterVolume', (v) => audio.setMasterVolume(v / 100))
+settingsManager.onChange('sfxVolume', (v) => audio.setSfxVolume(v / 100))
+settingsManager.onChange('theme', (v) => themeManager.setTheme(v))
+settingsManager.onChange('ghostPiece', (v) =>
+  game.getRenderer().setGhostEnabled(v)
+)
+settingsManager.onChange('showGrid', (v) =>
+  game.getRenderer().setGridEnabled(v)
+)
+
+// Apply settings on load
+applyAllSettings()
+
+function openSettings(): void {
+  const state = game.getState()
+  ui.showSettings(() => {
+    // After closing settings, return to appropriate screen
+    if (state === GameState.PAUSED) {
+      ui.showPause()
+    } else {
+      ui.showStart()
+    }
+  })
+}
+
+ui.setOnSettingsOpen(openSettings)
 
 game.setOnStateChange((state) => {
   if (state === GameState.PAUSED) {
