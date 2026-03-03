@@ -90,11 +90,6 @@ export class StorageManager {
       // localStorage unavailable — silently ignore
     }
   }
-
-  /** @deprecated use setLastName */
-  saveName(name: string): void {
-    this.setLastName(name)
-  }
 }
 
 export const storageManager = new StorageManager()

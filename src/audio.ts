@@ -303,7 +303,11 @@ export class AudioManager {
 
   setMasterVolume(v: number): void {
     this._masterVolume = Math.max(0, Math.min(1, v))
-    localStorage.setItem(LS_MASTER, String(this._masterVolume))
+    try {
+      localStorage.setItem(LS_MASTER, String(this._masterVolume))
+    } catch {
+      // localStorage unavailable — silently ignore
+    }
     if (this.masterGain && !this._muted) {
       this.masterGain.gain.value = this._masterVolume
     }
@@ -315,7 +319,11 @@ export class AudioManager {
 
   setSfxVolume(v: number): void {
     this._sfxVolume = Math.max(0, Math.min(1, v))
-    localStorage.setItem(LS_SFX, String(this._sfxVolume))
+    try {
+      localStorage.setItem(LS_SFX, String(this._sfxVolume))
+    } catch {
+      // localStorage unavailable — silently ignore
+    }
     if (this.sfxGain) {
       this.sfxGain.gain.value = this._sfxVolume
     }
@@ -327,7 +335,11 @@ export class AudioManager {
 
   toggleMute(): void {
     this._muted = !this._muted
-    localStorage.setItem(LS_MUTED, String(this._muted))
+    try {
+      localStorage.setItem(LS_MUTED, String(this._muted))
+    } catch {
+      // localStorage unavailable — silently ignore
+    }
     if (this.masterGain) {
       this.masterGain.gain.value = this._muted ? 0 : this._masterVolume
     }
@@ -336,7 +348,11 @@ export class AudioManager {
   mute(): void {
     if (this._muted) return
     this._muted = true
-    localStorage.setItem(LS_MUTED, 'true')
+    try {
+      localStorage.setItem(LS_MUTED, 'true')
+    } catch {
+      // localStorage unavailable — silently ignore
+    }
     if (this.masterGain) {
       this.masterGain.gain.value = 0
     }
@@ -345,7 +361,11 @@ export class AudioManager {
   unmute(): void {
     if (!this._muted) return
     this._muted = false
-    localStorage.setItem(LS_MUTED, 'false')
+    try {
+      localStorage.setItem(LS_MUTED, 'false')
+    } catch {
+      // localStorage unavailable — silently ignore
+    }
     if (this.masterGain) {
       this.masterGain.gain.value = this._masterVolume
     }
