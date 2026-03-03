@@ -44,6 +44,7 @@ function applyAllSettings(): void {
   const inputMgr = game.getInputManager()
   inputMgr.setDasDelay(settingsManager.get('das'))
   inputMgr.setArrRate(settingsManager.get('arr'))
+  game.setSoftDropFactor(settingsManager.get('sdf'))
   audio.setMasterVolume(settingsManager.get('masterVolume') / 100)
   audio.setSfxVolume(settingsManager.get('sfxVolume') / 100)
   themeManager.setTheme(settingsManager.get('theme'))
@@ -54,6 +55,7 @@ function applyAllSettings(): void {
 
 settingsManager.onChange('das', (v) => game.getInputManager().setDasDelay(v))
 settingsManager.onChange('arr', (v) => game.getInputManager().setArrRate(v))
+settingsManager.onChange('sdf', (v) => game.setSoftDropFactor(v))
 settingsManager.onChange('masterVolume', (v) => audio.setMasterVolume(v / 100))
 settingsManager.onChange('sfxVolume', (v) => audio.setSfxVolume(v / 100))
 settingsManager.onChange('theme', (v) => themeManager.setTheme(v))

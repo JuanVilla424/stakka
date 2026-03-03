@@ -7,16 +7,16 @@ function makeManager(): SettingsManager {
 
 describe('SettingsManager', () => {
   beforeEach(() => {
+    const store: Record<string, string> = {}
     vi.stubGlobal('localStorage', {
-      _store: {} as Record<string, string>,
       getItem(key: string) {
-        return (this._store as Record<string, string>)[key] ?? null
+        return store[key] ?? null
       },
       setItem(key: string, val: string) {
-        ;(this._store as Record<string, string>)[key] = val
+        store[key] = val
       },
       removeItem(key: string) {
-        delete (this._store as Record<string, string>)[key]
+        delete store[key]
       },
     })
   })
