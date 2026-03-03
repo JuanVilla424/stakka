@@ -1,5 +1,3 @@
-import { Howler } from 'howler'
-
 export enum SoundEffect {
   Move = 'move',
   Rotate = 'rotate',
@@ -306,7 +304,6 @@ export class AudioManager {
   setMasterVolume(v: number): void {
     this._masterVolume = Math.max(0, Math.min(1, v))
     localStorage.setItem(LS_MASTER, String(this._masterVolume))
-    Howler.volume(this._masterVolume)
     if (this.masterGain && !this._muted) {
       this.masterGain.gain.value = this._masterVolume
     }
@@ -331,7 +328,6 @@ export class AudioManager {
   toggleMute(): void {
     this._muted = !this._muted
     localStorage.setItem(LS_MUTED, String(this._muted))
-    Howler.mute(this._muted)
     if (this.masterGain) {
       this.masterGain.gain.value = this._muted ? 0 : this._masterVolume
     }
@@ -341,7 +337,6 @@ export class AudioManager {
     if (this._muted) return
     this._muted = true
     localStorage.setItem(LS_MUTED, 'true')
-    Howler.mute(true)
     if (this.masterGain) {
       this.masterGain.gain.value = 0
     }
@@ -351,7 +346,6 @@ export class AudioManager {
     if (!this._muted) return
     this._muted = false
     localStorage.setItem(LS_MUTED, 'false')
-    Howler.mute(false)
     if (this.masterGain) {
       this.masterGain.gain.value = this._masterVolume
     }

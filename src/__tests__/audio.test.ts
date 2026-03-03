@@ -1,14 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { Howler } from 'howler'
 import { AudioManager, SoundEffect } from '../audio'
-
-vi.mock('howler', () => ({
-  Howler: {
-    volume: vi.fn(),
-    mute: vi.fn(),
-    ctx: null,
-  },
-}))
 
 const mockOscillator = {
   type: 'sine' as OscillatorType,
@@ -211,11 +202,6 @@ describe('AudioManager volume controls', () => {
     expect(mgr.getMasterVolume()).toBe(1)
   })
 
-  it('setMasterVolume calls Howler.volume()', () => {
-    mgr.setMasterVolume(0.6)
-    expect(Howler.volume).toHaveBeenCalledWith(0.6)
-  })
-
   it('setMasterVolume saves to localStorage', () => {
     mgr.setMasterVolume(0.4)
     expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -267,11 +253,6 @@ describe('AudioManager mute controls', () => {
     mgr.toggleMute()
     mgr.toggleMute()
     expect(mgr.isMuted()).toBe(false)
-  })
-
-  it('toggleMute() calls Howler.mute(true) on first toggle', () => {
-    mgr.toggleMute()
-    expect(Howler.mute).toHaveBeenCalledWith(true)
   })
 
   it('toggleMute() saves muted state to localStorage', () => {
