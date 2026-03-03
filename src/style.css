@@ -42,6 +42,26 @@ body {
   --control-active: rgba(0, 0, 0, 0.15);
 }
 
+[data-theme='light'] .leaderboard-table td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .leaderboard-table tbody tr:nth-child(even) td {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] .leaderboard-table tbody tr:hover td {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .lb-highlight td {
+  background: rgba(0, 102, 204, 0.1) !important;
+}
+
+[data-theme='light'] .name-input {
+  background: rgba(255, 255, 255, 0.8);
+}
+
 body {
   background-color: var(--bg);
   display: flex;
@@ -532,6 +552,31 @@ body {
     min-height: 48px;
     font-size: 18px;
   }
+
+  .leaderboard-title {
+    font-size: 24px;
+    letter-spacing: 4px;
+  }
+
+  .leaderboard-table {
+    font-size: 11px;
+  }
+
+  .leaderboard-table th,
+  .leaderboard-table td {
+    padding: 5px 4px;
+  }
+
+  /* Hide DATE column on small screens */
+  .leaderboard-table th:nth-child(6),
+  .leaderboard-table td:nth-child(6) {
+    display: none;
+  }
+
+  .name-input {
+    width: 160px;
+    font-size: 14px;
+  }
 }
 
 /* ── Tablet breakpoint ── */
@@ -542,6 +587,15 @@ body {
 
   .overlay-content {
     gap: 20px;
+  }
+
+  .leaderboard-title {
+    font-size: 28px;
+    letter-spacing: 6px;
+  }
+
+  .leaderboard-table {
+    font-size: 12px;
   }
 }
 
