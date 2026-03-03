@@ -1,5 +1,6 @@
 import { Board } from './board'
-import { Piece } from './piece'
+import { GameAction, InputManager } from './input'
+import { Piece, TetrominoType } from './piece'
 import { BagRandomizer } from './randomizer'
 import { Renderer } from './renderer'
 import { tryRotate, detectTSpin } from './srs'
@@ -15,7 +16,10 @@ export class Game {
   private board: Board
   private renderer: Renderer
   private randomizer: BagRandomizer
+  private input: InputManager
   private currentPiece: Piece | null = null
+  private holdPiece: TetrominoType | null = null
+  private canHold = true
   private lastMoveWasRotation = false
   private lastKickIndex = 0
   private state: GameState = GameState.IDLE
@@ -30,15 +34,12 @@ export class Game {
   private lockResets = 0
   private lockDelayActive = false
   private lowestY = 0
-  private boundKeyDown: (e: KeyboardEvent) => void
-  private boundKeyUp: (e: KeyboardEvent) => void
 
   constructor(canvas: HTMLCanvasElement) {
     this.board = new Board()
     this.renderer = new Renderer(canvas)
     this.randomizer = new BagRandomizer()
-    this.boundKeyDown = (e: KeyboardEvent) => this.handleKeyDown(e)
-    this.boundKeyUp = (e: KeyboardEvent) => this.handleKeyUp(e)
+    this.input = new InputManager()
   }
 
   start(): void {
@@ -46,11 +47,12 @@ export class Game {
     this.randomizer.reset()
     this.dropAccumulator = 0
     this.lastTime = 0
+    this.holdPiece = null
+    this.canHold = true
     this.state = GameState.PLAYING
     this.spawnPiece()
     if (this.state === GameState.PLAYING) {
-      document.addEventListener('keydown', this.boundKeyDown)
-      document.addEventListener('keyup', this.boundKeyUp)
+      this.input.attach()
       this.rafId = requestAnimationFrame((t) => this.gameLoop(t))
     }
   }
@@ -58,6 +60,7 @@ export class Game {
   pause(): void {
     if (this.state !== GameState.PLAYING) return
     this.state = GameState.PAUSED
+    this.input.detach()
     cancelAnimationFrame(this.rafId)
   }
 
@@ -65,15 +68,19 @@ export class Game {
     if (this.state !== GameState.PAUSED) return
     this.state = GameState.PLAYING
     this.lastTime = 0
+    this.input.attach()
+    this.input.reset()
     this.rafId = requestAnimationFrame((t) => this.gameLoop(t))
   }
 
   reset(): void {
     cancelAnimationFrame(this.rafId)
-    document.removeEventListener('keydown', this.boundKeyDown)
-    document.removeEventListener('keyup', this.boundKeyUp)
+    this.input.detach()
+    this.input.reset()
     this.board.reset()
     this.currentPiece = null
+    this.holdPiece = null
+    this.canHold = true
     this.state = GameState.IDLE
     this.softDropping = false
     this.lockDelayActive = false
@@ -87,6 +94,51 @@ export class Game {
     const delta =
       this.lastTime === 0 ? 0 : Math.min(timestamp - this.lastTime, 200)
     this.lastTime = timestamp
+
+    // Process input actions
+    const actions = this.input.update(delta)
+    for (const action of actions) {
+      switch (action) {
+        case GameAction.MOVE_LEFT:
+          this.moveLeft()
+          break
+        case GameAction.MOVE_RIGHT:
+          this.moveRight()
+          break
+        case GameAction.SOFT_DROP:
+          this.moveDown()
+          break
+        case GameAction.HARD_DROP:
+          this.hardDrop()
+          break
+        case GameAction.ROTATE_CW:
+          this.rotateCW()
+          break
+        case GameAction.ROTATE_CCW:
+          this.rotateCCW()
+          break
+        case GameAction.PAUSE:
+          this.pause()
+          return
+        case GameAction.RESTART:
+          // handled at app level when game is over
+          break
+        case GameAction.HOLD:
+          this.holdCurrentPiece()
+          break
+      }
+    }
+
+    // Manage soft drop state
+    const softDropHeld = this.input.isKeyDown(GameAction.SOFT_DROP)
+    if (softDropHeld && !this.softDropping) {
+      this.softDropping = true
+      this.dropInterval = 50
+    } else if (!softDropHeld && this.softDropping) {
+      this.softDropping = false
+      this.dropInterval = this.normalDropInterval
+    }
+
     this.dropAccumulator += delta
 
     // Update lock delay timer
@@ -111,7 +163,15 @@ export class Game {
     const lockProgress = this.lockDelayActive
       ? Math.max(0, 1 - this.lockTimer / 500)
       : 0
-    this.renderer.drawFrame(this.board, this.currentPiece, ghostY, lockProgress)
+    this.renderer.drawFrame(
+      this.board,
+      this.currentPiece,
+      ghostY,
+      lockProgress,
+      this.holdPiece,
+      this.canHold,
+      this.randomizer.peek(5)
+    )
 
     if (this.state === GameState.PLAYING) {
       this.rafId = requestAnimationFrame((t) => this.gameLoop(t))
@@ -153,6 +213,7 @@ export class Game {
     )
     this.board.lockPiece(this.currentPiece)
     this.board.clearLines()
+    this.canHold = true
     this.spawnPiece()
   }
 
@@ -169,6 +230,30 @@ export class Game {
     this.lockResets = 0
     this.lockDelayActive = false
     this.lowestY = piece.y
+  }
+
+  private holdCurrentPiece(): void {
+    if (!this.currentPiece || !this.canHold) return
+    const currentType = this.currentPiece.type
+    if (this.holdPiece === null) {
+      this.holdPiece = currentType
+      this.spawnPiece()
+    } else {
+      const swapType = this.holdPiece
+      this.holdPiece = currentType
+      const newPiece = new Piece(swapType, 3, 1)
+      if (this.board.checkCollision(newPiece, 0, 0, newPiece.rotation)) {
+        this.state = GameState.GAME_OVER
+        this.currentPiece = null
+        return
+      }
+      this.currentPiece = newPiece
+      this.lockTimer = 0
+      this.lockResets = 0
+      this.lockDelayActive = false
+      this.lowestY = newPiece.y
+    }
+    this.canHold = false
   }
 
   private resetLockTimer(): void {
@@ -260,47 +345,6 @@ export class Game {
     }
   }
 
-  private handleKeyDown(e: KeyboardEvent): void {
-    switch (e.key) {
-      case 'ArrowLeft':
-        e.preventDefault()
-        this.moveLeft()
-        break
-      case 'ArrowRight':
-        e.preventDefault()
-        this.moveRight()
-        break
-      case 'ArrowDown':
-        e.preventDefault()
-        if (!this.softDropping) {
-          this.softDropping = true
-          this.dropInterval = 50
-        }
-        this.moveDown()
-        break
-      case 'ArrowUp':
-        e.preventDefault()
-        this.rotateCW()
-        break
-      case 'z':
-      case 'Z':
-        e.preventDefault()
-        this.rotateCCW()
-        break
-      case ' ':
-        e.preventDefault()
-        this.hardDrop()
-        break
-    }
-  }
-
-  private handleKeyUp(e: KeyboardEvent): void {
-    if (e.key === 'ArrowDown') {
-      this.softDropping = false
-      this.dropInterval = this.normalDropInterval
-    }
-  }
-
   getState(): GameState {
     return this.state
   }
@@ -311,6 +355,18 @@ export class Game {
 
   getCurrentPiece(): Piece | null {
     return this.currentPiece
+  }
+
+  getHoldPiece(): TetrominoType | null {
+    return this.holdPiece
+  }
+
+  getCanHold(): boolean {
+    return this.canHold
+  }
+
+  getNextPieces(count: number): TetrominoType[] {
+    return this.randomizer.peek(count)
   }
 
   getDropPosition(piece: Piece): number {
