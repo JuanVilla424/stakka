@@ -108,12 +108,10 @@ export class Game {
     const ghostY = this.currentPiece
       ? this.getDropPosition(this.currentPiece)
       : null
-    this.renderer.drawFrame(
-      this.board,
-      this.currentPiece,
-      ghostY,
-      this.lockDelayActive
-    )
+    const lockProgress = this.lockDelayActive
+      ? Math.max(0, 1 - this.lockTimer / 500)
+      : 0
+    this.renderer.drawFrame(this.board, this.currentPiece, ghostY, lockProgress)
 
     if (this.state === GameState.PLAYING) {
       this.rafId = requestAnimationFrame((t) => this.gameLoop(t))

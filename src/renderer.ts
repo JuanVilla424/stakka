@@ -41,10 +41,11 @@ export class Renderer {
     }
   }
 
-  drawPiece(piece: Piece, lockDelayActive = false): void {
-    const color = lockDelayActive
-      ? this.lighten(TETROMINO_COLORS[piece.type], 0.25)
-      : TETROMINO_COLORS[piece.type]
+  drawPiece(piece: Piece, lockProgress = 0): void {
+    const color =
+      lockProgress > 0
+        ? this.lighten(TETROMINO_COLORS[piece.type], 0.25 * lockProgress)
+        : TETROMINO_COLORS[piece.type]
     for (const block of piece.getBlocks()) {
       if (block.y >= 2) {
         this.drawCell(block.x, block.y - 2, color)
@@ -61,10 +62,9 @@ export class Renderer {
     this.ctx.strokeStyle = color
     this.ctx.lineWidth = 2
 
-    const shape =
-      piece.constructor === piece.constructor
-        ? piece.getBlocks().map((b) => ({ x: b.x, y: b.y - piece.y + dropY }))
-        : []
+    const shape = piece
+      .getBlocks()
+      .map((b) => ({ x: b.x, y: b.y - piece.y + dropY }))
 
     for (const block of shape) {
       if (block.y >= 2) {
@@ -124,7 +124,7 @@ export class Renderer {
     board: Board,
     piece: Piece | null,
     ghostY: number | null = null,
-    lockDelayActive = false
+    lockProgress = 0
   ): void {
     this.clear()
     this.drawBoard(board)
@@ -132,7 +132,7 @@ export class Renderer {
       this.drawGhostPiece(piece, ghostY)
     }
     if (piece) {
-      this.drawPiece(piece, lockDelayActive)
+      this.drawPiece(piece, lockProgress)
     }
     this.drawGrid()
   }
