@@ -309,15 +309,15 @@ export class Game {
       this.lastKickIndex
     )
 
-    // Capture full row colors before clearing
-    const { rows: fullRows, colorData } = this.board.captureFullRows()
-
     this.board.lockPiece(this.currentPiece)
     audio.play(SoundEffect.Lock)
     navigator.vibrate?.(10)
 
     // Lock flash animation
     this.animManager.addLockFlash(lockBlocks, cellSize, boardOffsetX)
+
+    // Capture full row colors after locking but before clearing
+    const { rows: fullRows, colorData } = this.board.captureFullRows()
 
     const cleared = this.board.clearLines()
     const prevLevel = this.scoreManager.level
