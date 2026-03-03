@@ -80,6 +80,10 @@ export class Game {
     this.onStateChange = cb
   }
 
+  resize(cellSize?: number): void {
+    this.renderer.resize(cellSize)
+  }
+
   start(): void {
     audio.ensureResumed()
     this.board.reset()
@@ -250,7 +254,7 @@ export class Game {
       lockProgress,
       this.holdPiece,
       this.canHold,
-      this.randomizer.peek(5),
+      this.randomizer.peek(this.renderer.getNextPeekCount()),
       this.scoreManager.score,
       this.scoreManager.level,
       this.scoreManager.totalLines,

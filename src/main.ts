@@ -3,6 +3,7 @@ import { Game, GameState } from './game'
 import { UIManager } from './ui'
 import { isTouchDevice } from './touch'
 import { audio, SoundEffect } from './audio'
+import { LayoutManager } from './layout'
 
 const app = document.getElementById('app') as HTMLDivElement
 
@@ -12,6 +13,7 @@ app.appendChild(canvas)
 
 const ui = new UIManager(app)
 const game = new Game(canvas)
+const layoutManager = new LayoutManager()
 
 // Wire UI touch buttons into the game loop
 game.setActionProvider(() => ui.pollTouchActions())
@@ -68,8 +70,20 @@ app.addEventListener(
   { passive: false }
 )
 
-if (isTouchDevice()) {
-  ui.showTouchControls()
+function applyLayout(): void {
+  game.resize(layoutManager.cellSize)
+  document.body.dataset.breakpoint = layoutManager.breakpoint
+  if (isTouchDevice()) {
+    if (layoutManager.breakpoint === 'desktop') {
+      ui.hideTouchControls()
+    } else {
+      ui.showTouchControls()
+    }
+  }
 }
+
+layoutManager.calculateLayout(window.innerWidth, window.innerHeight)
+layoutManager.attach(() => applyLayout())
+applyLayout()
 
 ui.showStart()
