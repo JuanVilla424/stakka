@@ -6,6 +6,8 @@ import { BagRandomizer } from './randomizer'
 import { Renderer } from './renderer'
 import { ScoreManager } from './scoring'
 import { tryRotate, detectTSpin } from './srs'
+import { audio, SoundEffect } from './audio'
+import { TouchManager } from './touch'
 
 export enum GameState {
   IDLE = 'IDLE',
@@ -30,10 +32,13 @@ function popupFontSize(text: string): number {
 }
 
 export class Game {
+  private canvas: HTMLCanvasElement
   private board: Board
   private renderer: Renderer
   private randomizer: BagRandomizer
   private input: InputManager
+  private touch: TouchManager
+  private actionProvider: (() => GameAction[]) | null = null
   private currentPiece: Piece | null = null
   private holdPiece: TetrominoType | null = null
   private canHold = true
@@ -56,10 +61,16 @@ export class Game {
   private onStateChange?: (state: GameState) => void
 
   constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas
     this.board = new Board()
     this.renderer = new Renderer(canvas)
     this.randomizer = new BagRandomizer()
     this.input = new InputManager()
+    this.touch = new TouchManager()
+  }
+
+  setActionProvider(fn: () => GameAction[]): void {
+    this.actionProvider = fn
   }
 
   setOnStateChange(cb: (state: GameState) => void): void {
@@ -67,6 +78,7 @@ export class Game {
   }
 
   start(): void {
+    audio.ensureResumed()
     this.board.reset()
     this.randomizer.reset()
     this.scoreManager.reset()
@@ -87,6 +99,7 @@ export class Game {
     if (this.state === GameState.PLAYING) {
       this.input.reset()
       this.input.attach()
+      this.touch.attach(this.canvas)
       this.rafId = requestAnimationFrame((t) => this.gameLoop(t))
     }
   }
@@ -95,6 +108,7 @@ export class Game {
     if (this.state !== GameState.PLAYING) return
     this.state = GameState.PAUSED
     this.input.detach()
+    this.touch.detach()
     cancelAnimationFrame(this.rafId)
     this.onStateChange?.(GameState.PAUSED)
   }
@@ -105,6 +119,8 @@ export class Game {
     this.lastTime = 0
     this.input.attach()
     this.input.reset()
+    this.touch.attach(this.canvas)
+    this.touch.reset()
     this.rafId = requestAnimationFrame((t) => this.gameLoop(t))
   }
 
@@ -112,6 +128,8 @@ export class Game {
     cancelAnimationFrame(this.rafId)
     this.input.detach()
     this.input.reset()
+    this.touch.detach()
+    this.touch.reset()
     this.board.reset()
     this.scoreManager.reset()
     this.currentPiece = null
@@ -134,8 +152,13 @@ export class Game {
     this.lastTime = timestamp
     this.elapsedTime += delta
 
-    // Process input actions
-    const actions = this.input.update(delta)
+    // Process input actions from all sources
+    const externalActions = this.actionProvider ? this.actionProvider() : []
+    const actions = [
+      ...this.input.update(delta),
+      ...this.touch.update(delta),
+      ...externalActions,
+    ]
     for (const action of actions) {
       switch (action) {
         case GameAction.MOVE_LEFT:
@@ -258,8 +281,28 @@ export class Game {
       this.lastKickIndex
     )
     this.board.lockPiece(this.currentPiece)
+    audio.play(SoundEffect.Lock)
+    navigator.vibrate?.(10)
     const cleared = this.board.clearLines()
+    const prevLevel = this.scoreManager.level
     const event = this.scoreManager.processLineClear(cleared.length, tSpinType)
+    if (cleared.length > 0) {
+      navigator.vibrate?.(20)
+      if (event.label.includes('TETRIS')) {
+        audio.play(SoundEffect.Tetris)
+      } else if (event.label.includes('T-SPIN')) {
+        audio.play(SoundEffect.TSpin)
+      } else {
+        audio.play(SoundEffect.LineClear)
+      }
+    }
+    const comboMatch = event.label.match(/COMBO[^\d]*(\d+)/)
+    if (comboMatch) {
+      audio.play(SoundEffect.Combo, { combo: parseInt(comboMatch[1], 10) })
+    }
+    if (this.scoreManager.level > prevLevel) {
+      audio.play(SoundEffect.LevelUp)
+    }
     if (event.label) {
       const cx = this.renderer.getBoardCenterX()
       event.label.split('\n').forEach((text, i) => {
@@ -288,6 +331,8 @@ export class Game {
       this.state = GameState.GAME_OVER
       this.currentPiece = null
       this.input.detach()
+      this.touch.detach()
+      audio.play(SoundEffect.GameOver)
       this.onStateChange?.(GameState.GAME_OVER)
       return
     }
@@ -312,6 +357,8 @@ export class Game {
         this.state = GameState.GAME_OVER
         this.currentPiece = null
         this.input.detach()
+        this.touch.detach()
+        audio.play(SoundEffect.GameOver)
         this.onStateChange?.(GameState.GAME_OVER)
         return
       }
@@ -321,6 +368,7 @@ export class Game {
       this.lockDelayActive = false
       this.lowestY = newPiece.y
     }
+    audio.play(SoundEffect.Hold)
     this.canHold = false
   }
 
@@ -345,6 +393,7 @@ export class Game {
       this.lastMoveWasRotation = false
       this.lastKickIndex = 0
       this.resetLockTimer()
+      audio.play(SoundEffect.Move)
     }
   }
 
@@ -362,6 +411,7 @@ export class Game {
       this.lastMoveWasRotation = false
       this.lastKickIndex = 0
       this.resetLockTimer()
+      audio.play(SoundEffect.Move)
     }
   }
 
@@ -380,11 +430,14 @@ export class Game {
       this.dropAccumulator = 0
       this.lastMoveWasRotation = false
       this.lastKickIndex = 0
+      audio.play(SoundEffect.SoftDrop)
     }
   }
 
   hardDrop(): void {
     if (!this.currentPiece || this.state !== GameState.PLAYING) return
+    audio.play(SoundEffect.HardDrop)
+    navigator.vibrate?.(15)
     const dropY = this.getDropPosition(this.currentPiece)
     const distance = dropY - this.currentPiece.y
     this.scoreManager.addHardDrop(distance)
@@ -400,6 +453,7 @@ export class Game {
       this.lastMoveWasRotation = true
       this.lastKickIndex = result.kickIndex
       this.resetLockTimer()
+      audio.play(SoundEffect.Rotate)
     }
   }
 
@@ -410,6 +464,7 @@ export class Game {
       this.lastMoveWasRotation = true
       this.lastKickIndex = result.kickIndex
       this.resetLockTimer()
+      audio.play(SoundEffect.Rotate)
     }
   }
 
