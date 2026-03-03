@@ -6,6 +6,7 @@ import {
 } from './piece'
 import type { Board } from './board'
 import type { PopupManager } from './effects'
+import type { AnimationManager } from './animations'
 
 function formatNumber(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -35,6 +36,22 @@ export class Renderer {
 
   getBoardCenterX(): number {
     return this.boardOffsetX + (this.cols * this.cellSize) / 2
+  }
+
+  getCellSize(): number {
+    return this.cellSize
+  }
+
+  getBoardOffsetX(): number {
+    return this.boardOffsetX
+  }
+
+  getCanvasWidth(): number {
+    return 2 * this.boardOffsetX + this.cols * this.cellSize
+  }
+
+  getCanvasHeight(): number {
+    return this.rows * this.cellSize
   }
 
   clear(): void {
@@ -262,9 +279,15 @@ export class Renderer {
     level = 1,
     lines = 0,
     elapsedTime = 0,
-    popupManager: PopupManager | null = null
+    popupManager: PopupManager | null = null,
+    animationManager: AnimationManager | null = null
   ): void {
     this.clear()
+
+    const shake = animationManager?.getShakeOffset() ?? { x: 0, y: 0 }
+    this.ctx.save()
+    this.ctx.translate(shake.x, shake.y)
+
     this.drawHoldPanel(holdPiece, canHold)
     this.drawNextQueue(nextPieces)
     this.drawScorePanel(score, level, lines, elapsedTime)
@@ -276,11 +299,16 @@ export class Renderer {
     if (piece) {
       this.drawPiece(piece, lockProgress)
     }
+    if (animationManager) {
+      animationManager.draw(this.ctx)
+    }
     this.drawGrid()
     this.drawBoardBorder()
     if (popupManager) {
       popupManager.draw(this.ctx)
     }
+
+    this.ctx.restore()
   }
 
   private drawScorePanel(

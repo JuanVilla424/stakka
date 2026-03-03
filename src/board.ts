@@ -59,6 +59,18 @@ export class Board {
     }
   }
 
+  captureFullRows(): { rows: number[]; colorData: number[][] } {
+    const rows: number[] = []
+    const colorData: number[][] = []
+    for (let row = 0; row < ROWS; row++) {
+      if (this.grid[row].every((cell) => cell !== 0)) {
+        rows.push(row)
+        colorData.push([...this.grid[row]])
+      }
+    }
+    return { rows, colorData }
+  }
+
   clearLines(): number[] {
     const clearedRows: number[] = []
     for (let row = 0; row < ROWS; row++) {

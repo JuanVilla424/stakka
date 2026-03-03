@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "test": "vitest run"
   },
+  "dependencies": {
+    "howler": "^2.2.4"
+  },
   "devDependencies": {
+    "@types/howler": "^2.2.12",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",

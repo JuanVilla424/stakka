@@ -1,13 +1,14 @@
 import { Board } from './board'
 import { PopupManager } from './effects'
 import { GameAction, InputManager } from './input'
-import { Piece, TetrominoType } from './piece'
+import { Piece, TETROMINO_COLORS, TetrominoType } from './piece'
 import { BagRandomizer } from './randomizer'
 import { Renderer } from './renderer'
 import { ScoreManager } from './scoring'
 import { tryRotate, detectTSpin } from './srs'
 import { audio, SoundEffect } from './audio'
 import { TouchManager } from './touch'
+import { AnimationManager } from './animations'
 
 export enum GameState {
   IDLE = 'IDLE',
@@ -53,6 +54,8 @@ export class Game {
   private rafId = 0
   private softDropping = false
   private popupManager = new PopupManager()
+  private animManager = new AnimationManager()
+  private gravityPauseRemaining = 0
   private elapsedTime = 0
   private lockTimer = 0
   private lockResets = 0
@@ -93,6 +96,8 @@ export class Game {
     this.lockTimer = 0
     this.lockResets = 0
     this.popupManager.reset()
+    this.animManager.reset()
+    this.gravityPauseRemaining = 0
     this.elapsedTime = 0
     this.state = GameState.PLAYING
     this.spawnPiece()
@@ -141,6 +146,8 @@ export class Game {
     this.lockTimer = 0
     this.lockResets = 0
     this.popupManager.reset()
+    this.animManager.reset()
+    this.gravityPauseRemaining = 0
     this.elapsedTime = 0
   }
 
@@ -204,25 +211,31 @@ export class Game {
       this.dropInterval = this.normalDropInterval
     }
 
-    this.dropAccumulator += delta
+    // Gravity pauses during line clear animation
+    if (this.gravityPauseRemaining > 0) {
+      this.gravityPauseRemaining -= delta
+    } else {
+      this.dropAccumulator += delta
 
-    // Update lock delay timer
-    if (this.lockDelayActive && this.currentPiece) {
-      this.lockTimer -= delta
-      if (this.lockTimer <= 0 || this.lockResets >= 15) {
-        this.lockPieceFull()
+      // Update lock delay timer
+      if (this.lockDelayActive && this.currentPiece) {
+        this.lockTimer -= delta
+        if (this.lockTimer <= 0 || this.lockResets >= 15) {
+          this.lockPieceFull()
+        }
+      }
+
+      while (
+        this.dropAccumulator >= this.dropInterval &&
+        this.state === GameState.PLAYING
+      ) {
+        this.tick()
+        this.dropAccumulator -= this.dropInterval
       }
     }
 
-    while (
-      this.dropAccumulator >= this.dropInterval &&
-      this.state === GameState.PLAYING
-    ) {
-      this.tick()
-      this.dropAccumulator -= this.dropInterval
-    }
-
     this.popupManager.update(delta)
+    this.animManager.update(delta)
 
     const ghostY = this.currentPiece
       ? this.getDropPosition(this.currentPiece)
@@ -242,7 +255,8 @@ export class Game {
       this.scoreManager.level,
       this.scoreManager.totalLines,
       this.elapsedTime,
-      this.popupManager
+      this.popupManager,
+      this.animManager
     )
 
     if (this.state === GameState.PLAYING) {
@@ -277,18 +291,33 @@ export class Game {
 
   private lockPieceFull(): void {
     if (!this.currentPiece) return
+
+    // Capture lock flash blocks before locking
+    const lockBlocks = this.currentPiece.getBlocks()
+    const cellSize = this.renderer.getCellSize()
+    const boardOffsetX = this.renderer.getBoardOffsetX()
+
     const tSpinType = detectTSpin(
       this.currentPiece,
       this.board,
       this.lastMoveWasRotation,
       this.lastKickIndex
     )
+
+    // Capture full row colors before clearing
+    const { rows: fullRows, colorData } = this.board.captureFullRows()
+
     this.board.lockPiece(this.currentPiece)
     audio.play(SoundEffect.Lock)
     navigator.vibrate?.(10)
+
+    // Lock flash animation
+    this.animManager.addLockFlash(lockBlocks, cellSize, boardOffsetX)
+
     const cleared = this.board.clearLines()
     const prevLevel = this.scoreManager.level
     const event = this.scoreManager.processLineClear(cleared.length, tSpinType)
+
     if (cleared.length > 0) {
       navigator.vibrate?.(20)
       if (event.label.includes('TETRIS')) {
@@ -298,14 +327,34 @@ export class Game {
       } else {
         audio.play(SoundEffect.LineClear)
       }
+
+      // Line clear animation + particles
+      const isTetris = cleared.length >= 4
+      this.animManager.addLineClear(
+        fullRows,
+        colorData,
+        cellSize,
+        boardOffsetX,
+        isTetris
+      )
+
+      // Pause gravity during line clear flash
+      this.gravityPauseRemaining = 300
     }
+
     const comboMatch = event.label.match(/COMBO[^\d]*(\d+)/)
     if (comboMatch) {
       audio.play(SoundEffect.Combo, { combo: parseInt(comboMatch[1], 10) })
     }
+
     if (this.scoreManager.level > prevLevel) {
       audio.play(SoundEffect.LevelUp)
+      this.animManager.addLevelUp(
+        this.renderer.getCanvasWidth(),
+        this.renderer.getCanvasHeight()
+      )
     }
+
     if (event.label) {
       const cx = this.renderer.getBoardCenterX()
       event.label.split('\n').forEach((text, i) => {
@@ -318,6 +367,7 @@ export class Game {
         )
       })
     }
+
     // Update gravity when level changes
     this.normalDropInterval = this.scoreManager.getGravityDelay()
     if (!this.softDropping) {
@@ -443,6 +493,23 @@ export class Game {
     navigator.vibrate?.(15)
     const dropY = this.getDropPosition(this.currentPiece)
     const distance = dropY - this.currentPiece.y
+
+    // Hard drop trail animation
+    if (distance > 0) {
+      const blockCols = [
+        ...new Set(this.currentPiece.getBlocks().map((b) => b.x)),
+      ]
+      const color = TETROMINO_COLORS[this.currentPiece.type]
+      this.animManager.addHardDropTrail(
+        blockCols,
+        this.currentPiece.y,
+        dropY,
+        color,
+        this.renderer.getCellSize(),
+        this.renderer.getBoardOffsetX()
+      )
+    }
+
     this.scoreManager.addHardDrop(distance)
     this.currentPiece.y = dropY
     this.lockPieceFull()
