@@ -59,6 +59,20 @@ export class Board {
     }
   }
 
+  getRowColors(row: number): number[] {
+    return [...this.grid[row]]
+  }
+
+  getFullRows(): number[] {
+    const rows: number[] = []
+    for (let row = 0; row < ROWS; row++) {
+      if (this.grid[row].every((cell) => cell !== 0)) {
+        rows.push(row)
+      }
+    }
+    return rows
+  }
+
   captureFullRows(): { rows: number[]; colorData: number[][] } {
     const rows: number[] = []
     const colorData: number[][] = []

@@ -143,4 +143,90 @@ describe('Board', () => {
       }
     })
   })
+
+  describe('getRowColors', () => {
+    it('returns all zeros for an empty row', () => {
+      const colors = board.getRowColors(10)
+      expect(colors).toHaveLength(10)
+      expect(colors.every((c) => c === 0)).toBe(true)
+    })
+
+    it('returns correct color values after setCell', () => {
+      board.setCell(0, 5, 3)
+      board.setCell(9, 5, 7)
+      const colors = board.getRowColors(5)
+      expect(colors[0]).toBe(3)
+      expect(colors[9]).toBe(7)
+      expect(colors[1]).toBe(0)
+    })
+
+    it('returns a copy, not a reference', () => {
+      board.setCell(0, 5, 1)
+      const colors = board.getRowColors(5)
+      colors[0] = 99
+      expect(board.getCell(0, 5)).toBe(1)
+    })
+  })
+
+  describe('getFullRows', () => {
+    it('returns empty array when board is empty', () => {
+      expect(board.getFullRows()).toEqual([])
+    })
+
+    it('returns row index when a row is fully filled', () => {
+      for (let x = 0; x < 10; x++) board.setCell(x, 21, 1)
+      expect(board.getFullRows()).toContain(21)
+    })
+
+    it('does not return partially filled row', () => {
+      for (let x = 0; x < 9; x++) board.setCell(x, 20, 1)
+      expect(board.getFullRows()).not.toContain(20)
+    })
+
+    it('returns multiple full rows', () => {
+      for (let x = 0; x < 10; x++) {
+        board.setCell(x, 20, 2)
+        board.setCell(x, 21, 3)
+      }
+      const full = board.getFullRows()
+      expect(full).toContain(20)
+      expect(full).toContain(21)
+      expect(full).toHaveLength(2)
+    })
+  })
+
+  describe('captureFullRows', () => {
+    it('returns empty rows and colorData when board is empty', () => {
+      const result = board.captureFullRows()
+      expect(result.rows).toEqual([])
+      expect(result.colorData).toEqual([])
+    })
+
+    it('captures row indices and color data for full rows', () => {
+      for (let x = 0; x < 10; x++) board.setCell(x, 21, x + 1 > 7 ? 1 : x + 1)
+      const result = board.captureFullRows()
+      expect(result.rows).toContain(21)
+      expect(result.colorData).toHaveLength(1)
+      expect(result.colorData[0]).toHaveLength(10)
+    })
+
+    it('does not modify the board', () => {
+      for (let x = 0; x < 10; x++) board.setCell(x, 21, 1)
+      board.captureFullRows()
+      expect(board.getCell(0, 21)).toBe(1)
+    })
+
+    it('captures multiple rows with correct color data', () => {
+      for (let x = 0; x < 10; x++) {
+        board.setCell(x, 19, 2)
+        board.setCell(x, 20, 3)
+        board.setCell(x, 21, 4)
+      }
+      const result = board.captureFullRows()
+      expect(result.rows).toHaveLength(3)
+      expect(result.colorData[0][0]).toBe(2)
+      expect(result.colorData[1][0]).toBe(3)
+      expect(result.colorData[2][0]).toBe(4)
+    })
+  })
 })
