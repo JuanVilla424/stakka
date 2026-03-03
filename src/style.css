@@ -12,8 +12,38 @@ body {
   height: 100%;
 }
 
+:root {
+  --bg: #0a0a0a;
+  --text: #ffffff;
+  --text-muted: #888888;
+  --text-secondary: #cccccc;
+  --accent: #00f0f0;
+  --accent-glow: rgba(0, 212, 255, 0.8);
+  --accent-glow-soft: rgba(0, 212, 255, 0.4);
+  --overlay-bg: rgba(0, 0, 0, 0.85);
+  --border: #333333;
+  --control-bg: rgba(255, 255, 255, 0.12);
+  --control-border: rgba(255, 255, 255, 0.25);
+  --control-active: rgba(255, 255, 255, 0.28);
+}
+
+[data-theme='light'] {
+  --bg: #f0f0f0;
+  --text: #1a1a1a;
+  --text-muted: #666666;
+  --text-secondary: #555555;
+  --accent: #0066cc;
+  --accent-glow: rgba(0, 102, 204, 0.8);
+  --accent-glow-soft: rgba(0, 102, 204, 0.4);
+  --overlay-bg: rgba(255, 255, 255, 0.85);
+  --border: #cccccc;
+  --control-bg: rgba(0, 0, 0, 0.08);
+  --control-border: rgba(0, 0, 0, 0.2);
+  --control-active: rgba(0, 0, 0, 0.15);
+}
+
 body {
-  background-color: #0a0a0a;
+  background-color: var(--bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -40,7 +70,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--overlay-bg);
   backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;
@@ -66,7 +96,7 @@ body {
   align-items: center;
   gap: 24px;
   text-align: center;
-  color: #ffffff;
+  color: var(--text);
   font-family: 'Courier New', Courier, monospace;
 }
 
@@ -74,10 +104,10 @@ body {
   font-size: 72px;
   font-weight: 900;
   letter-spacing: 12px;
-  color: #00d4ff;
+  color: var(--accent);
   text-shadow:
-    0 0 30px rgba(0, 212, 255, 0.8),
-    0 0 60px rgba(0, 212, 255, 0.4);
+    0 0 30px var(--accent-glow),
+    0 0 60px var(--accent-glow-soft);
 }
 
 .pause-title {
@@ -110,7 +140,7 @@ body {
 
 .prompt {
   font-size: 18px;
-  color: #cccccc;
+  color: var(--text-secondary);
   animation: pulse 1.2s ease-in-out infinite;
 }
 
@@ -129,7 +159,7 @@ body {
   grid-template-columns: auto auto;
   gap: 6px 24px;
   font-size: 13px;
-  color: #888888;
+  color: var(--text-muted);
 }
 
 .controls-legend div {
@@ -138,7 +168,7 @@ body {
 
 .controls-legend span:first-child {
   text-align: right;
-  color: #aaaaaa;
+  color: var(--text-secondary);
   font-weight: bold;
 }
 
@@ -159,15 +189,42 @@ body {
 }
 
 .stat-label {
-  color: #888888;
+  color: var(--text-muted);
   font-size: 13px;
   letter-spacing: 2px;
 }
 
 .stat-value {
-  color: #ffffff;
+  color: var(--text);
   font-weight: bold;
   font-size: 18px;
+}
+
+/* ── Theme Toggle ── */
+.theme-toggle {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 30;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--control-border);
+  border-radius: 50%;
+  background: var(--control-bg);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease;
+  backdrop-filter: blur(4px);
+}
+
+.theme-toggle:hover {
+  background: var(--control-active);
 }
 
 /* ── Touch Controls ── */
@@ -182,7 +239,7 @@ body {
   flex-direction: column;
   align-items: center;
   z-index: 20;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--overlay-bg);
 }
 
 .touch-controls.visible {
@@ -199,10 +256,10 @@ body {
   min-width: 56px;
   min-height: 56px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background: var(--control-bg);
+  color: var(--text);
   font-size: 20px;
   font-family: 'Courier New', Courier, monospace;
   cursor: pointer;
@@ -216,7 +273,24 @@ body {
 }
 
 .touch-btn:active {
-  background: rgba(255, 255, 255, 0.28);
+  background: var(--control-active);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body {
+    transition: background-color 300ms ease;
+  }
+
+  .overlay,
+  .overlay-content,
+  .touch-btn,
+  .touch-controls {
+    transition:
+      background-color 300ms ease,
+      color 300ms ease,
+      border-color 300ms ease,
+      opacity 200ms ease;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

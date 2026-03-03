@@ -1,4 +1,5 @@
 import { GameAction } from './input'
+import { themeManager } from './theme'
 
 export interface GameOverStats {
   score: number
@@ -123,11 +124,28 @@ export class UIManager {
   private touchControls: HTMLElement
   private touchActionQueue: GameAction[] = []
   private heldAction: GameAction | null = null
+  private themeBtn: HTMLElement
 
   constructor(container: HTMLElement) {
     this.overlay = el('div', 'overlay')
     this.overlay.id = 'overlay'
     container.appendChild(this.overlay)
+
+    this.themeBtn = el('button', 'theme-toggle')
+    this.themeBtn.textContent =
+      themeManager.getThemeName() === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'
+    if (typeof this.themeBtn.addEventListener === 'function') {
+      this.themeBtn.addEventListener('click', () => {
+        themeManager.toggle()
+        this.themeBtn.textContent =
+          themeManager.getThemeName() === 'dark'
+            ? '\u2600\uFE0F'
+            : '\uD83C\uDF19'
+      })
+    }
+    if (document.body) {
+      document.body.appendChild(this.themeBtn)
+    }
 
     this.screenStart = buildStartScreen()
     this.overlay.appendChild(this.screenStart)
