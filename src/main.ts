@@ -53,7 +53,7 @@ game.setOnStateChange((state) => {
         {
           defaultName: storageManager.getLastName(),
           onNameSubmit: (name: string) => {
-            storageManager.saveName(name)
+            storageManager.setLastName(name)
             const entry: LeaderboardEntry = {
               name,
               score,
