@@ -2,6 +2,7 @@ import { Board } from './board'
 import { Piece } from './piece'
 import { BagRandomizer } from './randomizer'
 import { Renderer } from './renderer'
+import { tryRotate, detectTSpin } from './srs'
 
 export enum GameState {
   IDLE = 'IDLE',
@@ -15,6 +16,8 @@ export class Game {
   private renderer: Renderer
   private randomizer: BagRandomizer
   private currentPiece: Piece | null = null
+  private lastMoveWasRotation = false
+  private lastKickIndex = 0
   private state: GameState = GameState.IDLE
   private dropInterval = 1000
   private dropAccumulator = 0
@@ -95,6 +98,12 @@ export class Game {
     if (canMoveDown) {
       this.currentPiece.y += 1
     } else {
+      detectTSpin(
+        this.currentPiece,
+        this.board,
+        this.lastMoveWasRotation,
+        this.lastKickIndex
+      )
       this.board.lockPiece(this.currentPiece)
       this.board.clearLines()
       this.spawnPiece()
@@ -123,6 +132,8 @@ export class Game {
       )
     ) {
       this.currentPiece.x -= 1
+      this.lastMoveWasRotation = false
+      this.lastKickIndex = 0
     }
   }
 
@@ -137,6 +148,8 @@ export class Game {
       )
     ) {
       this.currentPiece.x += 1
+      this.lastMoveWasRotation = false
+      this.lastKickIndex = 0
     }
   }
 
@@ -152,16 +165,26 @@ export class Game {
     ) {
       this.currentPiece.y += 1
       this.dropAccumulator = 0
+      this.lastMoveWasRotation = false
+      this.lastKickIndex = 0
     }
   }
 
   rotateCW(): void {
     if (!this.currentPiece || this.state !== GameState.PLAYING) return
-    const candidateRotation = (this.currentPiece.rotation + 1) % 4
-    if (
-      !this.board.checkCollision(this.currentPiece, 0, 0, candidateRotation)
-    ) {
-      this.currentPiece.rotation = candidateRotation
+    const result = tryRotate(this.currentPiece, this.board, 1)
+    if (result.success) {
+      this.lastMoveWasRotation = true
+      this.lastKickIndex = result.kickIndex
+    }
+  }
+
+  rotateCCW(): void {
+    if (!this.currentPiece || this.state !== GameState.PLAYING) return
+    const result = tryRotate(this.currentPiece, this.board, -1)
+    if (result.success) {
+      this.lastMoveWasRotation = true
+      this.lastKickIndex = result.kickIndex
     }
   }
 
@@ -182,6 +205,11 @@ export class Game {
       case 'ArrowUp':
         e.preventDefault()
         this.rotateCW()
+        break
+      case 'z':
+      case 'Z':
+        e.preventDefault()
+        this.rotateCCW()
         break
     }
   }
