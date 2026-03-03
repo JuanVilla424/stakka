@@ -23,6 +23,7 @@ export class Game {
   private dropAccumulator = 0
   private lastTime = 0
   private rafId = 0
+  private score = 0
   private boundKeyDown: (e: KeyboardEvent) => void
 
   constructor(canvas: HTMLCanvasElement) {
@@ -216,5 +217,28 @@ export class Game {
 
   getState(): GameState {
     return this.state
+  }
+
+  getScore(): number {
+    return this.score
+  }
+
+  getCurrentPiece(): Piece | null {
+    return this.currentPiece
+  }
+
+  getDropPosition(piece: Piece): number {
+    let y = piece.y
+    while (
+      !this.board.checkCollision(piece, 0, y - piece.y + 1, piece.rotation)
+    ) {
+      y++
+    }
+    return y
+  }
+
+  getGhostY(): number | null {
+    if (!this.currentPiece) return null
+    return this.getDropPosition(this.currentPiece)
   }
 }
