@@ -19,18 +19,26 @@ export class Game {
   private lastMoveWasRotation = false
   private lastKickIndex = 0
   private state: GameState = GameState.IDLE
+  private normalDropInterval = 1000
   private dropInterval = 1000
   private dropAccumulator = 0
   private lastTime = 0
   private rafId = 0
   private score = 0
+  private softDropping = false
+  private lockTimer = 0
+  private lockResets = 0
+  private lockDelayActive = false
+  private lowestY = 0
   private boundKeyDown: (e: KeyboardEvent) => void
+  private boundKeyUp: (e: KeyboardEvent) => void
 
   constructor(canvas: HTMLCanvasElement) {
     this.board = new Board()
     this.renderer = new Renderer(canvas)
     this.randomizer = new BagRandomizer()
     this.boundKeyDown = (e: KeyboardEvent) => this.handleKeyDown(e)
+    this.boundKeyUp = (e: KeyboardEvent) => this.handleKeyUp(e)
   }
 
   start(): void {
@@ -42,6 +50,7 @@ export class Game {
     this.spawnPiece()
     if (this.state === GameState.PLAYING) {
       document.addEventListener('keydown', this.boundKeyDown)
+      document.addEventListener('keyup', this.boundKeyUp)
       this.rafId = requestAnimationFrame((t) => this.gameLoop(t))
     }
   }
@@ -62,9 +71,14 @@ export class Game {
   reset(): void {
     cancelAnimationFrame(this.rafId)
     document.removeEventListener('keydown', this.boundKeyDown)
+    document.removeEventListener('keyup', this.boundKeyUp)
     this.board.reset()
     this.currentPiece = null
     this.state = GameState.IDLE
+    this.softDropping = false
+    this.lockDelayActive = false
+    this.lockTimer = 0
+    this.lockResets = 0
   }
 
   private gameLoop(timestamp: number): void {
@@ -75,12 +89,31 @@ export class Game {
     this.lastTime = timestamp
     this.dropAccumulator += delta
 
-    while (this.dropAccumulator >= this.dropInterval) {
+    // Update lock delay timer
+    if (this.lockDelayActive && this.currentPiece) {
+      this.lockTimer -= delta
+      if (this.lockTimer <= 0 || this.lockResets >= 15) {
+        this.lockPieceFull()
+      }
+    }
+
+    while (
+      this.dropAccumulator >= this.dropInterval &&
+      this.state === GameState.PLAYING
+    ) {
       this.tick()
       this.dropAccumulator -= this.dropInterval
     }
 
-    this.renderer.drawFrame(this.board, this.currentPiece)
+    const ghostY = this.currentPiece
+      ? this.getDropPosition(this.currentPiece)
+      : null
+    this.renderer.drawFrame(
+      this.board,
+      this.currentPiece,
+      ghostY,
+      this.lockDelayActive
+    )
 
     if (this.state === GameState.PLAYING) {
       this.rafId = requestAnimationFrame((t) => this.gameLoop(t))
@@ -98,17 +131,31 @@ export class Game {
     )
     if (canMoveDown) {
       this.currentPiece.y += 1
+      if (this.softDropping) this.score += 1
+      if (this.currentPiece.y > this.lowestY) {
+        this.lowestY = this.currentPiece.y
+        this.lockResets = 0
+      }
+      this.lockDelayActive = false
     } else {
-      detectTSpin(
-        this.currentPiece,
-        this.board,
-        this.lastMoveWasRotation,
-        this.lastKickIndex
-      )
-      this.board.lockPiece(this.currentPiece)
-      this.board.clearLines()
-      this.spawnPiece()
+      if (!this.lockDelayActive) {
+        this.lockDelayActive = true
+        this.lockTimer = 500
+      }
     }
+  }
+
+  private lockPieceFull(): void {
+    if (!this.currentPiece) return
+    detectTSpin(
+      this.currentPiece,
+      this.board,
+      this.lastMoveWasRotation,
+      this.lastKickIndex
+    )
+    this.board.lockPiece(this.currentPiece)
+    this.board.clearLines()
+    this.spawnPiece()
   }
 
   private spawnPiece(): void {
@@ -120,6 +167,17 @@ export class Game {
       return
     }
     this.currentPiece = piece
+    this.lockTimer = 0
+    this.lockResets = 0
+    this.lockDelayActive = false
+    this.lowestY = piece.y
+  }
+
+  private resetLockTimer(): void {
+    if (this.lockDelayActive && this.lockResets < 15) {
+      this.lockTimer = 500
+      this.lockResets += 1
+    }
   }
 
   moveLeft(): void {
@@ -135,6 +193,7 @@ export class Game {
       this.currentPiece.x -= 1
       this.lastMoveWasRotation = false
       this.lastKickIndex = 0
+      this.resetLockTimer()
     }
   }
 
@@ -151,6 +210,7 @@ export class Game {
       this.currentPiece.x += 1
       this.lastMoveWasRotation = false
       this.lastKickIndex = 0
+      this.resetLockTimer()
     }
   }
 
@@ -165,10 +225,21 @@ export class Game {
       )
     ) {
       this.currentPiece.y += 1
+      this.score += 1
       this.dropAccumulator = 0
       this.lastMoveWasRotation = false
       this.lastKickIndex = 0
     }
+  }
+
+  hardDrop(): void {
+    if (!this.currentPiece || this.state !== GameState.PLAYING) return
+    const dropY = this.getDropPosition(this.currentPiece)
+    const distance = dropY - this.currentPiece.y
+    this.score += 2 * distance
+    this.currentPiece.y = dropY
+    this.lockPieceFull()
+    this.dropAccumulator = 0
   }
 
   rotateCW(): void {
@@ -177,6 +248,7 @@ export class Game {
     if (result.success) {
       this.lastMoveWasRotation = true
       this.lastKickIndex = result.kickIndex
+      this.resetLockTimer()
     }
   }
 
@@ -186,6 +258,7 @@ export class Game {
     if (result.success) {
       this.lastMoveWasRotation = true
       this.lastKickIndex = result.kickIndex
+      this.resetLockTimer()
     }
   }
 
@@ -201,6 +274,10 @@ export class Game {
         break
       case 'ArrowDown':
         e.preventDefault()
+        if (!this.softDropping) {
+          this.softDropping = true
+          this.dropInterval = 50
+        }
         this.moveDown()
         break
       case 'ArrowUp':
@@ -212,6 +289,17 @@ export class Game {
         e.preventDefault()
         this.rotateCCW()
         break
+      case ' ':
+        e.preventDefault()
+        this.hardDrop()
+        break
+    }
+  }
+
+  private handleKeyUp(e: KeyboardEvent): void {
+    if (e.key === 'ArrowDown') {
+      this.softDropping = false
+      this.dropInterval = this.normalDropInterval
     }
   }
 
@@ -240,5 +328,25 @@ export class Game {
   getGhostY(): number | null {
     if (!this.currentPiece) return null
     return this.getDropPosition(this.currentPiece)
+  }
+
+  isLockDelayActive(): boolean {
+    return this.lockDelayActive
+  }
+
+  getLockTimer(): number {
+    return this.lockTimer
+  }
+
+  getLockResets(): number {
+    return this.lockResets
+  }
+
+  isSoftDropping(): boolean {
+    return this.softDropping
+  }
+
+  getDropInterval(): number {
+    return this.dropInterval
   }
 }

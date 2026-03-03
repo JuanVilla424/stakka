@@ -41,13 +41,41 @@ export class Renderer {
     }
   }
 
-  drawPiece(piece: Piece): void {
-    const color = TETROMINO_COLORS[piece.type]
+  drawPiece(piece: Piece, lockDelayActive = false): void {
+    const color = lockDelayActive
+      ? this.lighten(TETROMINO_COLORS[piece.type], 0.25)
+      : TETROMINO_COLORS[piece.type]
     for (const block of piece.getBlocks()) {
       if (block.y >= 2) {
         this.drawCell(block.x, block.y - 2, color)
       }
     }
+  }
+
+  drawGhostPiece(piece: Piece, dropY: number): void {
+    if (dropY === piece.y) return
+    const color = TETROMINO_COLORS[piece.type]
+    const cs = this.cellSize
+    this.ctx.save()
+    this.ctx.globalAlpha = 0.3
+    this.ctx.strokeStyle = color
+    this.ctx.lineWidth = 2
+
+    const shape =
+      piece.constructor === piece.constructor
+        ? piece.getBlocks().map((b) => ({ x: b.x, y: b.y - piece.y + dropY }))
+        : []
+
+    for (const block of shape) {
+      if (block.y >= 2) {
+        const cx = block.x * cs
+        const cy = (block.y - 2) * cs
+        this.ctx.beginPath()
+        this.ctx.roundRect(cx + 1, cy + 1, cs - 2, cs - 2, 3)
+        this.ctx.stroke()
+      }
+    }
+    this.ctx.restore()
   }
 
   drawGrid(): void {
@@ -92,11 +120,19 @@ export class Renderer {
     this.ctx.restore()
   }
 
-  drawFrame(board: Board, piece: Piece | null): void {
+  drawFrame(
+    board: Board,
+    piece: Piece | null,
+    ghostY: number | null = null,
+    lockDelayActive = false
+  ): void {
     this.clear()
     this.drawBoard(board)
+    if (piece && ghostY !== null) {
+      this.drawGhostPiece(piece, ghostY)
+    }
     if (piece) {
-      this.drawPiece(piece)
+      this.drawPiece(piece, lockDelayActive)
     }
     this.drawGrid()
   }
