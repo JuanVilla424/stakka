@@ -108,7 +108,7 @@ function buildStartScreen(): StartScreenRefs {
   const legend = el('div', 'controls-legend')
   const controls: [string, string][] = [
     ['← →', 'Move'],
-    ['↑ W', 'Rotate CW'],
+    ['↑ / X', 'Rotate CW'],
     ['Z', 'Rotate CCW'],
     ['↓ S', 'Soft Drop'],
     ['Space', 'Hard Drop'],

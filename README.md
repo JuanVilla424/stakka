@@ -50,13 +50,13 @@ A modern Tetris clone built with Vite + TypeScript + Canvas 2D.
 | Key | Action |
 |-----|--------|
 | `←` / `→` | Move left / right |
-| `↑` / `X` | Rotate clockwise |
-| `Z` / `Ctrl` | Rotate counter-clockwise |
-| `↓` | Soft drop |
+| `↑` / `X` / `W` | Rotate clockwise |
+| `Z` | Rotate counter-clockwise |
+| `↓` / `S` | Soft drop |
 | `Space` | Hard drop |
 | `C` / `Shift` | Hold piece |
 | `Esc` | Pause / resume |
-| `Enter` | Start / confirm |
+| `Enter` / `R` | Start / restart |
 
 ### Touch
 
