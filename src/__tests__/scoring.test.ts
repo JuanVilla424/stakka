@@ -230,4 +230,36 @@ describe('ScoreManager', () => {
     expect(sm.totalLines).toBe(0)
     expect(sm.combo).toBe(-1)
   })
+
+  // --- ScoreEvent color field ---
+
+  it('single clear has white color', () => {
+    const ev = sm.processLineClear(1, 'none')
+    expect(ev.color).toBe('#ffffff')
+  })
+
+  it('double clear has white color', () => {
+    const ev = sm.processLineClear(2, 'none')
+    expect(ev.color).toBe('#ffffff')
+  })
+
+  it('tetris has gold color', () => {
+    const ev = sm.processLineClear(4, 'none')
+    expect(ev.color).toBe('#ffd700')
+  })
+
+  it('t-spin mini single has purple color', () => {
+    const ev = sm.processLineClear(1, 'mini')
+    expect(ev.color).toBe('#a000f0')
+  })
+
+  it('t-spin double has purple color', () => {
+    const ev = sm.processLineClear(2, 'full')
+    expect(ev.color).toBe('#a000f0')
+  })
+
+  it('no action returns white color', () => {
+    const ev = sm.processLineClear(0, 'none')
+    expect(ev.color).toBe('#ffffff')
+  })
 })

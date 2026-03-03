@@ -103,4 +103,29 @@ describe('PopupManager', () => {
     pm.draw(ctx)
     expect(ctx.save).not.toHaveBeenCalled()
   })
+
+  it('addPopup increases count', () => {
+    const pm = new PopupManager()
+    expect(pm.count).toBe(0)
+    pm.addPopup('SINGLE', 300, 200, '#ffffff')
+    expect(pm.count).toBe(1)
+    pm.addPopup('DOUBLE', 300, 228, '#ffffff')
+    expect(pm.count).toBe(2)
+  })
+
+  it('custom duration of 500ms: active at 499ms, expired at 500ms', () => {
+    const pm1 = new PopupManager()
+    pm1.addPopup('TETRIS!', 300, 200, '#ffd700', 18, 500)
+    pm1.update(499)
+    const ctx1 = createMockCtx()
+    pm1.draw(ctx1)
+    expect(ctx1.fillText).toHaveBeenCalled()
+
+    const pm2 = new PopupManager()
+    pm2.addPopup('TETRIS!', 300, 200, '#ffd700', 18, 500)
+    pm2.update(500)
+    const ctx2 = createMockCtx()
+    pm2.draw(ctx2)
+    expect(ctx2.save).not.toHaveBeenCalled()
+  })
 })

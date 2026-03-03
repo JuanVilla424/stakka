@@ -437,6 +437,13 @@ export class Game {
     return this.elapsedTime
   }
 
+  getFormattedTime(): string {
+    const totalSec = Math.floor(this.elapsedTime / 1000)
+    const m = Math.floor(totalSec / 60)
+    const s = totalSec % 60
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+
   getCurrentPiece(): Piece | null {
     return this.currentPiece
   }

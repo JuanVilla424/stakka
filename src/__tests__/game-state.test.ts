@@ -274,4 +274,18 @@ describe('game timer', () => {
     game.reset()
     expect(game.getElapsedTime()).toBe(0)
   })
+
+  it('getFormattedTime() returns 00:00 initially', () => {
+    expect(game.getFormattedTime()).toBe('00:00')
+  })
+
+  it('getFormattedTime() formats 65000ms as 01:05', () => {
+    ;(game as unknown as { elapsedTime: number }).elapsedTime = 65000
+    expect(game.getFormattedTime()).toBe('01:05')
+  })
+
+  it('getFormattedTime() formats 3599000ms as 59:59', () => {
+    ;(game as unknown as { elapsedTime: number }).elapsedTime = 3599000
+    expect(game.getFormattedTime()).toBe('59:59')
+  })
 })
