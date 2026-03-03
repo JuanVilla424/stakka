@@ -1,6 +1,6 @@
 # 🔒 Security Policy
 
-Security Policy for **GitHub CICD Template** repository includes all required compliance matrix and artifact mapping.
+Security Policy for **stakka** repository includes all required compliance matrix and artifact mapping.
 
 ## 🧮 Supported Versions
 
@@ -8,8 +8,8 @@ We provide security updates for the following versions of our project:
 
 | Version | Status      | Secure |
 | ------- | ----------- | ------ |
-| 1.0.1   | End-of-life | No     |
-| >1.0.4  | Supported   | Yes    |
+| < 0.1.0 | End-of-life | No     |
+| 0.1.0   | Supported   | Yes    |
 
 ## 🛡️ Security Practices
 
@@ -38,7 +38,6 @@ If you discover a security vulnerability within this project, please follow thes
 ## 🛰️ Additional Resources
 
 - [OWASP Security Guidelines](https://owasp.org/)
-- [AWS Security Best Practices](https://aws.amazon.com/security/security-best-practices/)
 
 Thank you for helping us keep this project secure!
 
@@ -46,4 +45,4 @@ Thank you for helping us keep this project secure!
 
 ## 📜 License
 
-2026 - This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html). You are free to use, modify, and distribute this software under the terms of the GPL-3.0 license. For more details, please refer to the [LICENSE](LICENSE) file included in this repository.
+2026 - This project is licensed under the [MIT License](LICENSE). You are free to use, modify, and distribute this software under the terms of the MIT license. For more details, please refer to the [LICENSE](LICENSE) file included in this repository.

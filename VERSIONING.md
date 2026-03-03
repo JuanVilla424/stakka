@@ -13,9 +13,7 @@ We follow [Semantic Versioning](https://semver.org/) with the version format `MA
 Our repository uses the following branches to manage the development and release process:
 
 1. **dev:** Active development happens here. New features and bug fixes are merged into this branch.
-2. **test:** Once features in `dev` are stable, they are promoted to `test` for further testing.
-3. **prod:** After thorough testing, changes from `test` are promoted to `prod` for production deployment.
-4. **main:** The `main` branch holds the latest production-ready code. Releases are tagged from this branch.
+2. **main:** The `main` branch holds the latest production-ready code. Releases are tagged from this branch and auto-deployed to GitHub Pages.
 
 ## 📝 Commit Message Guidelines
 
@@ -30,7 +28,7 @@ To automate versioning and changelog generation, it's essential to follow specif
 Example:
 
 ```bash
-feat(authentication): add OAuth2 support [minor candidate]
+feat(core): add t-spin detection [minor candidate]
 ```
 
 ### 🔤 Commit Types
@@ -54,9 +52,9 @@ feat(authentication): add OAuth2 support [minor candidate]
 
 Examples:
 
-- `feat(authentication): add OAuth2 support [minor candidate]`
-- `fix(api): resolve authentication error [patch candidate]`
-- `refactor(core): restructure authentication module [major candidate]`
+- `feat(core): add combo system [minor candidate]`
+- `fix(core): resolve collision detection error [patch candidate]`
+- `refactor(core): restructure game state machine [major candidate]`
 
 ## 🚀 Release Process
 
@@ -64,17 +62,10 @@ Examples:
    - Developers work on features and bug fixes in the `dev` branch.
    - Commit messages should follow the guidelines above to indicate the type of changes.
 
-2. Testing Phase:
-   Once a set of features is complete and stable in `dev`, they are promoted to the `test` branch.
-   Automated workflows will handle version bumps and pull requests to the next branch.
-
-3. Production Phase:
-   After successful testing in `test`, changes are promoted to the `prod` branch.
-   Final testing and validation occur here before deployment.
-
-4. Release:
-   - Changes from `prod` are merged into `main`.
-   - A release is tagged, and the `CHANGELOG.md` is updated automatically based on commit messages.
+2. Release:
+   - Changes from `dev` are merged into `main`.
+   - A release is tagged, and the `CHANGELOG.md` is updated based on commit messages.
+   - GitHub Actions automatically deploys to GitHub Pages on push to `main`.
 
 ## ⭐ Best Practices
 
@@ -87,4 +78,4 @@ Examples:
 
 ## 📜 License
 
-2026 - This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html). You are free to use, modify, and distribute this software under the terms of the GPL-3.0 license. For more details, please refer to the [LICENSE](LICENSE) file included in this repository.
+2026 - This project is licensed under the [MIT License](LICENSE). You are free to use, modify, and distribute this software under the terms of the MIT license. For more details, please refer to the [LICENSE](LICENSE) file included in this repository.
