@@ -13,6 +13,7 @@ body {
 }
 
 :root {
+  color-scheme: dark;
   --bg: #0a0a0a;
   --text: #ffffff;
   --text-muted: #888888;
@@ -28,6 +29,7 @@ body {
 }
 
 [data-theme='light'] {
+  color-scheme: light;
   --bg: #f0f0f0;
   --text: #1a1a1a;
   --text-muted: #666666;
@@ -853,4 +855,10 @@ body {
   #app {
     display: none;
   }
+}
+
+/* ── Touch controls overlap fix ── */
+/* On small phones, prevent canvas from rendering behind touch controls */
+#app:has(.touch-controls.visible) {
+  padding-bottom: 140px;
 }
