@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { SettingsManager, GameSettings } from '../settings'
+import { InputManager, GameAction } from '../input'
+import { ThemeManager } from '../theme'
+import { Renderer } from '../renderer'
+import type { Piece } from '../piece'
 
 function makeManager(): SettingsManager {
   return new SettingsManager()
@@ -208,5 +212,209 @@ describe('SettingsManager', () => {
       expect(cb1).toHaveBeenCalledWith(16)
       expect(cb2).toHaveBeenCalledWith(16)
     })
+  })
+})
+
+describe('SettingsManager — debounced auto-save', () => {
+  let store: Record<string, string>
+
+  beforeEach(() => {
+    store = {}
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => store[k] ?? null,
+      setItem: (k: string, v: string) => {
+        store[k] = v
+      },
+      removeItem: (k: string) => {
+        delete store[k]
+      },
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
+
+  it('does not write to localStorage immediately on set()', () => {
+    vi.useFakeTimers()
+    const mgr = new SettingsManager()
+    mgr.set('das', 83)
+    expect(localStorage.getItem('stakka_settings')).toBeNull()
+  })
+
+  it('writes to localStorage after 500ms debounce', () => {
+    vi.useFakeTimers()
+    const mgr = new SettingsManager()
+    mgr.set('das', 83)
+    vi.advanceTimersByTime(500)
+    const stored = JSON.parse(localStorage.getItem('stakka_settings') ?? 'null')
+    expect(stored?.das).toBe(83)
+  })
+
+  it('reset() writes defaults to localStorage immediately', () => {
+    const mgr = new SettingsManager()
+    mgr.reset()
+    const stored = JSON.parse(localStorage.getItem('stakka_settings') ?? 'null')
+    expect(stored).not.toBeNull()
+    expect(stored.das).toBe(167)
+  })
+})
+
+describe('InputManager integration', () => {
+  type InputInternal = {
+    handleKeyDown: (e: { key: string; preventDefault: () => void }) => void
+    handleKeyUp: (e: { key: string }) => void
+  }
+
+  function pressKey(input: InputManager, key: string): void {
+    const e = { key, preventDefault: () => {} }
+    ;(input as unknown as InputInternal).handleKeyDown(e)
+  }
+
+  it('setDasDelay() changes when DAS charges', () => {
+    const input = new InputManager({ dasDelay: 167, arrRate: 0 })
+    input.setDasDelay(50)
+    pressKey(input, 'ArrowLeft')
+    input.update(1) // immediate first move, dasTimer = 1
+    input.update(50) // dasTimer = 51 → DAS charged at 50ms
+    // DAS charged with arrRate=0: instant shift emits 10 moves
+    const actions = input.update(1)
+    expect(actions.filter((a) => a === GameAction.MOVE_LEFT).length).toBe(10)
+  })
+
+  it('setArrRate() changes repeat rate', () => {
+    const input = new InputManager({ dasDelay: 1, arrRate: 50 })
+    input.setArrRate(25)
+    pressKey(input, 'ArrowLeft')
+    input.update(1) // immediate move; dasTimer=1 >= dasDelay=1 → DAS charged
+    // arrRate=25: 50ms → floor(50/25) = 2 ARR moves
+    const actions = input.update(50)
+    expect(actions.filter((a) => a === GameAction.MOVE_LEFT).length).toBe(2)
+  })
+
+  it('setDasDelay() resets DAS timers so DAS restarts', () => {
+    const input = new InputManager({ dasDelay: 167, arrRate: 33 })
+    pressKey(input, 'ArrowLeft')
+    input.update(100) // immediate move consumed; dasTimer=100, not yet charged
+    input.setDasDelay(50) // timers reset to 0
+    input.update(1) // immediate move (dasTimer reset to 0); dasTimer=1
+    input.update(50) // dasTimer=51 >= 50 → DAS charges; ARR fires once
+    const actions = input.update(33) // ARR fires once more
+    expect(
+      actions.filter((a) => a === GameAction.MOVE_LEFT).length
+    ).toBeGreaterThan(0)
+  })
+})
+
+describe('ThemeManager integration', () => {
+  beforeEach(() => {
+    const store: Record<string, string> = {}
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => store[k] ?? null,
+      setItem: (k: string, v: string) => {
+        store[k] = v
+      },
+      removeItem: (k: string) => {
+        delete store[k]
+      },
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('setTheme("light") makes getThemeName() return "light"', () => {
+    const mgr = new ThemeManager()
+    mgr.setTheme('light')
+    expect(mgr.getThemeName()).toBe('light')
+  })
+
+  it('setTheme("dark") makes getThemeName() return "dark"', () => {
+    const mgr = new ThemeManager()
+    mgr.setTheme('dark')
+    expect(mgr.getThemeName()).toBe('dark')
+  })
+
+  it('setTheme("auto") makes getMode() return "auto"', () => {
+    const mgr = new ThemeManager()
+    mgr.setTheme('dark')
+    mgr.setTheme('auto')
+    expect(mgr.getMode()).toBe('auto')
+  })
+
+  it('setTheme("light") sets override so getMode() returns "light"', () => {
+    const mgr = new ThemeManager()
+    mgr.setTheme('light')
+    expect(mgr.getMode()).toBe('light')
+  })
+})
+
+describe('Renderer integration', () => {
+  function makeMockRenderer(): { renderer: Renderer; calls: string[] } {
+    const calls: string[] = []
+    const makeMethod = (name: string) => () => {
+      calls.push(name)
+    }
+
+    const canvas = {
+      style: { width: '', height: '' },
+      width: 0,
+      height: 0,
+    } as unknown as HTMLCanvasElement
+
+    const ctx = {
+      canvas,
+      save: makeMethod('save'),
+      restore: makeMethod('restore'),
+      beginPath: makeMethod('beginPath'),
+      stroke: makeMethod('stroke'),
+      roundRect: makeMethod('roundRect'),
+      moveTo: makeMethod('moveTo'),
+      lineTo: makeMethod('lineTo'),
+      createLinearGradient: () => ({ addColorStop: () => {} }),
+      setTransform: () => {},
+      fillRect: () => {},
+    } as unknown as CanvasRenderingContext2D
+
+    Object.assign(canvas, { getContext: () => ctx })
+
+    return { renderer: new Renderer(canvas), calls }
+  }
+
+  const mockPiece: Piece = {
+    type: 0,
+    x: 3,
+    y: 5,
+    getBlocks: () => [{ x: 3, y: 7 }],
+  } as unknown as Piece
+
+  it('setGhostEnabled(false) skips ghost drawing', () => {
+    const { renderer, calls } = makeMockRenderer()
+    renderer.setGhostEnabled(false)
+    renderer.drawGhostPiece(mockPiece, 15)
+    expect(calls).not.toContain('save')
+  })
+
+  it('setGhostEnabled(true) allows ghost drawing', () => {
+    const { renderer, calls } = makeMockRenderer()
+    renderer.setGhostEnabled(true)
+    renderer.drawGhostPiece(mockPiece, 15)
+    expect(calls).toContain('save')
+  })
+
+  it('setGridEnabled(false) skips grid drawing', () => {
+    const { renderer, calls } = makeMockRenderer()
+    renderer.setGridEnabled(false)
+    renderer.drawGrid()
+    expect(calls).not.toContain('save')
+  })
+
+  it('setGridEnabled(true) allows grid drawing', () => {
+    const { renderer, calls } = makeMockRenderer()
+    renderer.setGridEnabled(true)
+    renderer.drawGrid()
+    expect(calls).toContain('save')
   })
 })
