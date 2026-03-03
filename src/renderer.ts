@@ -26,13 +26,51 @@ export class Renderer {
   private cols = 10
   private rows = 20
   private boardOffsetX: number
+  private dpr = 1
 
   constructor(canvas: HTMLCanvasElement, cellSize = 30) {
     this.ctx = canvas.getContext('2d')!
     this.cellSize = cellSize
-    this.boardOffsetX = 5 * cellSize // 150px panel on each side
-    canvas.width = 2 * this.boardOffsetX + this.cols * cellSize // 600px
-    canvas.height = this.rows * cellSize // 600px
+    this.boardOffsetX = 5 * cellSize
+    this.applyCanvasDimensions()
+  }
+
+  private applyCanvasDimensions(): void {
+    const canvas = this.ctx.canvas
+    if (!canvas) return
+    const logicalW = 2 * this.boardOffsetX + this.cols * this.cellSize
+    const logicalH = this.rows * this.cellSize
+    this.dpr =
+      typeof window !== 'undefined'
+        ? Math.max(1, window.devicePixelRatio || 1)
+        : 1
+    canvas.width = logicalW * this.dpr
+    canvas.height = logicalH * this.dpr
+    if (canvas.style) {
+      canvas.style.width = logicalW + 'px'
+      canvas.style.height = logicalH + 'px'
+    }
+  }
+
+  resize(cellSize?: number): void {
+    if (cellSize !== undefined) {
+      this.cellSize = cellSize
+    } else {
+      const vw = window?.innerWidth || 0
+      const vh = window?.innerHeight || 0
+      if (!vw || !vh) return
+      const raw = Math.floor(Math.min((vw * 0.8) / 20, (vh * 0.85) / this.rows))
+      this.cellSize = Math.max(16, Math.min(36, raw))
+    }
+    this.boardOffsetX = 5 * this.cellSize
+    this.applyCanvasDimensions()
+  }
+
+  getNextPeekCount(): number {
+    const vw = window?.innerWidth || Infinity
+    if (vw < 768) return 3
+    if (vw < 1024) return 4
+    return 5
   }
 
   getBoardCenterX(): number {
@@ -58,6 +96,9 @@ export class Renderer {
   clear(): void {
     const w = 2 * this.boardOffsetX + this.cols * this.cellSize
     const h = this.rows * this.cellSize
+    if (this.dpr !== 1) {
+      this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
+    }
     const theme = themeManager.getTheme()
     const gradient = this.ctx.createLinearGradient(0, 0, 0, h)
     gradient.addColorStop(0, theme.backgroundGradientTop)
@@ -173,34 +214,43 @@ export class Renderer {
 
   drawHoldPanel(holdPiece: TetrominoType | null, canHold: boolean): void {
     const panelCenterX = this.boardOffsetX / 2
+    const cs = this.cellSize
     const theme = themeManager.getTheme()
 
     this.ctx.save()
     this.ctx.fillStyle = theme.textMuted
-    this.ctx.font = 'bold 13px monospace'
+    this.ctx.font = `bold ${Math.floor(cs * 0.43)}px monospace`
     this.ctx.textAlign = 'center'
-    this.ctx.fillText('HOLD', panelCenterX, 28)
+    this.ctx.fillText('HOLD', panelCenterX, Math.floor(cs * 0.93))
     this.ctx.restore()
 
     if (holdPiece !== null) {
-      this.drawPiecePreview(holdPiece, panelCenterX, 90, canHold ? 1 : 0.4)
+      this.drawPiecePreview(
+        holdPiece,
+        panelCenterX,
+        Math.floor(cs * 3),
+        canHold ? 1 : 0.4
+      )
     }
   }
 
   drawNextQueue(nextPieces: TetrominoType[]): void {
     const boardRight = this.boardOffsetX + this.cols * this.cellSize
     const panelCenterX = boardRight + this.boardOffsetX / 2
+    const cs = this.cellSize
     const theme = themeManager.getTheme()
 
     this.ctx.save()
     this.ctx.fillStyle = theme.textMuted
-    this.ctx.font = 'bold 13px monospace'
+    this.ctx.font = `bold ${Math.floor(cs * 0.43)}px monospace`
     this.ctx.textAlign = 'center'
-    this.ctx.fillText('NEXT', panelCenterX, 28)
+    this.ctx.fillText('NEXT', panelCenterX, Math.floor(cs * 0.93))
     this.ctx.restore()
 
+    const startY = Math.floor(cs * 2.4)
+    const spacing = Math.floor(cs * 3.3)
     for (let i = 0; i < nextPieces.length; i++) {
-      this.drawPiecePreview(nextPieces[i], panelCenterX, 72 + i * 100)
+      this.drawPiecePreview(nextPieces[i], panelCenterX, startY + i * spacing)
     }
   }
 
@@ -211,7 +261,7 @@ export class Renderer {
     alpha = 1
   ): void {
     const shape = TETROMINO_SHAPES[type][0]
-    const ps = 22
+    const ps = Math.max(12, Math.floor(this.cellSize * 0.73))
 
     let minR = shape.length,
       maxR = -1,
@@ -330,36 +380,39 @@ export class Renderer {
     elapsedTime: number
   ): void {
     const panelCenterX = this.boardOffsetX / 2
+    const cs = this.cellSize
     const ctx = this.ctx
 
     ctx.save()
     ctx.textAlign = 'center'
 
     const theme = themeManager.getTheme()
+    const lblSize = Math.max(9, Math.floor(cs * 0.37))
+    const valSize = Math.max(12, Math.floor(cs * 0.53))
 
     const lbl = (text: string, y: number): void => {
       ctx.fillStyle = theme.textMuted
-      ctx.font = 'bold 11px monospace'
-      ctx.fillText(text, panelCenterX, y)
+      ctx.font = `bold ${lblSize}px monospace`
+      ctx.fillText(text, panelCenterX, Math.floor(cs * y))
     }
 
     const val = (text: string, y: number): void => {
       ctx.fillStyle = theme.text
-      ctx.font = 'bold 16px monospace'
-      ctx.fillText(text, panelCenterX, y)
+      ctx.font = `bold ${valSize}px monospace`
+      ctx.fillText(text, panelCenterX, Math.floor(cs * y))
     }
 
-    lbl('SCORE', 170)
-    val(formatNumber(score), 188)
+    lbl('SCORE', 5.67)
+    val(formatNumber(score), 6.27)
 
-    lbl('LEVEL', 220)
-    val(String(level), 238)
+    lbl('LEVEL', 7.33)
+    val(String(level), 7.93)
 
-    lbl('LINES', 270)
-    val(String(lines), 288)
+    lbl('LINES', 9.0)
+    val(String(lines), 9.6)
 
-    lbl('TIME', 320)
-    val(formatTime(elapsedTime), 338)
+    lbl('TIME', 10.67)
+    val(formatTime(elapsedTime), 11.27)
 
     ctx.restore()
   }
