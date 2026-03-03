@@ -311,6 +311,195 @@ body {
   }
 }
 
+/* ── Start Screen ── */
+.high-score-display {
+  font-size: 15px;
+  color: var(--accent);
+  letter-spacing: 2px;
+}
+
+.leaderboard-open-btn {
+  padding: 8px 24px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.leaderboard-open-btn:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+/* ── Leaderboard Screen ── */
+.leaderboard-content {
+  max-width: 520px;
+  width: 100%;
+  padding: 0 16px;
+  overflow-y: auto;
+  max-height: 100vh;
+  max-height: 100svh;
+}
+
+.leaderboard-title {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+
+.leaderboard-empty {
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.leaderboard-table th {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  font-size: 11px;
+  text-align: left;
+}
+
+.leaderboard-table td {
+  padding: 8px 8px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard-table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.leaderboard-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.rank-gold td {
+  color: #ffd700;
+}
+
+.rank-silver td {
+  color: #c0c0c0;
+}
+
+.rank-bronze td {
+  color: #cd7f32;
+}
+
+.lb-highlight td {
+  background: rgba(0, 240, 240, 0.12) !important;
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.leaderboard-btn-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.lb-btn {
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.lb-btn:hover {
+  background: var(--control-bg);
+}
+
+.lb-btn-clear {
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+.lb-btn-clear:hover {
+  background: rgba(255, 68, 68, 0.15);
+}
+
+/* ── Name Input ── */
+.name-input-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.name-input-label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd700;
+  letter-spacing: 3px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.name-input {
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 16px;
+  text-align: center;
+  width: 200px;
+  outline: none;
+  box-shadow: 0 0 10px var(--accent-glow-soft);
+}
+
+.name-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.name-input-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.view-leaderboard-btn {
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.view-leaderboard-btn:hover {
+  background: var(--control-bg);
+}
+
 /* ── Mobile breakpoint ── */
 @media (max-width: 767px) {
   .game-title {

@@ -86,6 +86,33 @@ export class ThemeManager {
     return this.current
   }
 
+  getMode(): 'auto' | 'dark' | 'light' {
+    return this.userOverride ? this.current : 'auto'
+  }
+
+  setTheme(mode: 'auto' | 'dark' | 'light'): void {
+    if (mode === 'auto') {
+      this.userOverride = false
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('stakka-theme')
+      }
+      this.current =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-color-scheme: light)').matches
+          ? 'light'
+          : 'dark'
+    } else {
+      this.userOverride = true
+      this.current = mode
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('stakka-theme', mode)
+      }
+    }
+    this.applyToDOM()
+    this.onToggle?.()
+  }
+
   toggle(): void {
     this.current = this.current === 'dark' ? 'light' : 'dark'
     this.userOverride = true

@@ -1,10 +1,17 @@
 import { GameAction } from './input'
 import { themeManager } from './theme'
+import { LeaderboardEntry } from './storage'
 
 export interface GameOverStats {
   score: number
   level: number
   lines: number
+}
+
+export interface GameOverOptions {
+  onNameSubmit?: (name: string) => void
+  defaultName?: string
+  onViewLeaderboard?: () => void
 }
 
 interface TouchBtnDef {
@@ -31,6 +38,12 @@ const CONTINUOUS_TOUCH_ACTIONS = new Set<GameAction>([GameAction.SOFT_DROP])
 interface TouchBtnEntry {
   el: HTMLElement
   action: GameAction
+}
+
+interface StartScreenRefs {
+  screen: HTMLElement
+  highScoreEl: HTMLElement
+  leaderboardBtnEl: HTMLElement
 }
 
 function buildTouchControls(): {
@@ -61,12 +74,18 @@ function el(tag: string, className?: string): HTMLElement {
   return e
 }
 
-function buildStartScreen(): HTMLElement {
+function buildStartScreen(): StartScreenRefs {
   const screen = el('div', 'overlay-screen')
   const content = el('div', 'overlay-content')
 
   const title = el('h1', 'game-title')
   title.textContent = 'STAKKA'
+
+  const highScoreEl = el('p', 'high-score-display')
+  highScoreEl.textContent = 'High Score: —'
+
+  const leaderboardBtnEl = el('button', 'leaderboard-open-btn')
+  leaderboardBtnEl.textContent = 'LEADERBOARD'
 
   const prompt = el('p', 'prompt')
   prompt.textContent = 'Press ENTER to Start'
@@ -94,10 +113,12 @@ function buildStartScreen(): HTMLElement {
   }
 
   content.appendChild(title)
+  content.appendChild(highScoreEl)
+  content.appendChild(leaderboardBtnEl)
   content.appendChild(prompt)
   content.appendChild(legend)
   screen.appendChild(content)
-  return screen
+  return { screen, highScoreEl, leaderboardBtnEl }
 }
 
 function buildPauseScreen(): HTMLElement {
@@ -121,10 +142,14 @@ export class UIManager {
   private screenStart: HTMLElement
   private screenPause: HTMLElement
   private screenGameOver: HTMLElement
+  private screenLeaderboard: HTMLElement
   private touchControls: HTMLElement
   private touchActionQueue: GameAction[] = []
   private heldAction: GameAction | null = null
   private themeBtn: HTMLElement
+  private highScoreEl: HTMLElement
+  private nameInputEl: HTMLElement | null = null
+  private onLeaderboardOpen?: () => void
 
   constructor(container: HTMLElement) {
     this.overlay = el('div', 'overlay')
@@ -163,14 +188,29 @@ export class UIManager {
       }, 100)
     }
 
-    this.screenStart = buildStartScreen()
+    const {
+      screen: startScreen,
+      highScoreEl,
+      leaderboardBtnEl,
+    } = buildStartScreen()
+    this.screenStart = startScreen
+    this.highScoreEl = highScoreEl
     this.overlay.appendChild(this.screenStart)
+
+    if (typeof leaderboardBtnEl.addEventListener === 'function') {
+      leaderboardBtnEl.addEventListener('click', () => {
+        this.onLeaderboardOpen?.()
+      })
+    }
 
     this.screenPause = buildPauseScreen()
     this.overlay.appendChild(this.screenPause)
 
     this.screenGameOver = el('div', 'overlay-screen')
     this.overlay.appendChild(this.screenGameOver)
+
+    this.screenLeaderboard = el('div', 'overlay-screen')
+    this.overlay.appendChild(this.screenLeaderboard)
 
     this.hideAllScreens()
 
@@ -229,6 +269,13 @@ export class UIManager {
     this.screenStart.style.display = 'none'
     this.screenPause.style.display = 'none'
     this.screenGameOver.style.display = 'none'
+    this.screenLeaderboard.style.display = 'none'
+    if (this.nameInputEl) {
+      if (typeof (this.nameInputEl as HTMLInputElement).blur === 'function') {
+        ;(this.nameInputEl as HTMLInputElement).blur()
+      }
+      this.nameInputEl = null
+    }
   }
 
   showStart(): void {
@@ -243,10 +290,9 @@ export class UIManager {
     this.overlay.classList.add('visible')
   }
 
-  showGameOver(stats: GameOverStats): void {
+  showGameOver(stats: GameOverStats, opts?: GameOverOptions): void {
     this.hideAllScreens()
 
-    // Rebuild game over content with safe DOM methods
     this.screenGameOver.textContent = ''
     const content = el('div', 'overlay-content')
 
@@ -270,16 +316,163 @@ export class UIManager {
       statsDiv.appendChild(row)
     }
 
-    const prompt = el('p', 'prompt')
-    prompt.textContent = 'Press R or ENTER to Restart'
-
     content.appendChild(title)
     content.appendChild(statsDiv)
-    content.appendChild(prompt)
-    this.screenGameOver.appendChild(content)
 
+    if (opts?.onNameSubmit) {
+      const nameSection = el('div', 'name-input-section')
+
+      const label = el('p', 'name-input-label')
+      label.textContent = 'NEW HIGH SCORE!'
+      nameSection.appendChild(label)
+
+      const inputEl = el('input', 'name-input') as HTMLInputElement
+      inputEl.type = 'text'
+      inputEl.placeholder = 'Enter your name'
+      inputEl.maxLength = 12
+      if (opts.defaultName) inputEl.value = opts.defaultName
+      this.nameInputEl = inputEl
+
+      if (typeof inputEl.addEventListener === 'function') {
+        const submitHandler = opts.onNameSubmit
+        inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
+          if (e.key === 'Enter') {
+            e.stopPropagation()
+            const val = (inputEl.value || '').trim()
+            submitHandler(val || 'Anonymous')
+          }
+        })
+      }
+      nameSection.appendChild(inputEl)
+
+      const hint = el('p', 'name-input-hint')
+      hint.textContent = 'Press ENTER to submit'
+      nameSection.appendChild(hint)
+
+      content.appendChild(nameSection)
+
+      setTimeout(() => {
+        if (typeof inputEl.focus === 'function') inputEl.focus()
+      }, 50)
+    } else {
+      const prompt = el('p', 'prompt')
+      prompt.textContent = 'Press R or ENTER to Restart'
+      content.appendChild(prompt)
+
+      if (opts?.onViewLeaderboard) {
+        const lbLink = el('button', 'view-leaderboard-btn')
+        lbLink.textContent = 'View Leaderboard'
+        if (typeof lbLink.addEventListener === 'function') {
+          const cb = opts.onViewLeaderboard
+          lbLink.addEventListener('click', () => cb())
+        }
+        content.appendChild(lbLink)
+      }
+    }
+
+    this.screenGameOver.appendChild(content)
     this.screenGameOver.style.display = 'flex'
     this.overlay.classList.add('visible')
+  }
+
+  showLeaderboard(
+    entries: LeaderboardEntry[],
+    highlightIndex?: number,
+    onBack?: () => void,
+    onClear?: () => void
+  ): void {
+    this.hideAllScreens()
+    this.screenLeaderboard.textContent = ''
+
+    const content = el('div', 'overlay-content leaderboard-content')
+
+    const title = el('h2', 'leaderboard-title')
+    title.textContent = 'LEADERBOARD'
+    content.appendChild(title)
+
+    if (entries.length === 0) {
+      const empty = el('p', 'leaderboard-empty')
+      empty.textContent = 'No scores yet. Play a game!'
+      content.appendChild(empty)
+    } else {
+      const table = el('table', 'leaderboard-table')
+
+      const thead = el('thead')
+      const headerRow = el('tr')
+      for (const col of ['#', 'NAME', 'SCORE', 'LVL', 'LINES', 'DATE']) {
+        const th = el('th')
+        th.textContent = col
+        headerRow.appendChild(th)
+      }
+      thead.appendChild(headerRow)
+      table.appendChild(thead)
+
+      const tbody = el('tbody')
+      entries.forEach((entry, i) => {
+        const row = el('tr')
+        const classes: string[] = []
+        if (i === 0) classes.push('rank-gold')
+        else if (i === 1) classes.push('rank-silver')
+        else if (i === 2) classes.push('rank-bronze')
+        if (i === highlightIndex) classes.push('lb-highlight')
+        if (classes.length) row.className = classes.join(' ')
+
+        const cells = [
+          String(i + 1),
+          entry.name,
+          entry.score.toLocaleString(),
+          String(entry.level),
+          String(entry.lines),
+          entry.date,
+        ]
+        for (const cellText of cells) {
+          const td = el('td')
+          td.textContent = cellText
+          row.appendChild(td)
+        }
+        tbody.appendChild(row)
+      })
+      table.appendChild(tbody)
+      content.appendChild(table)
+    }
+
+    const btnRow = el('div', 'leaderboard-btn-row')
+
+    const clearBtn = el('button', 'lb-btn lb-btn-clear')
+    clearBtn.textContent = 'Clear'
+    if (onClear && typeof clearBtn.addEventListener === 'function') {
+      clearBtn.addEventListener('click', () => {
+        if (
+          typeof window.confirm === 'function' &&
+          !window.confirm('Clear all leaderboard entries?')
+        )
+          return
+        onClear()
+      })
+    }
+
+    const backBtn = el('button', 'lb-btn')
+    backBtn.textContent = 'Back'
+    if (onBack && typeof backBtn.addEventListener === 'function') {
+      backBtn.addEventListener('click', () => onBack())
+    }
+
+    btnRow.appendChild(clearBtn)
+    btnRow.appendChild(backBtn)
+    content.appendChild(btnRow)
+
+    this.screenLeaderboard.appendChild(content)
+    this.screenLeaderboard.style.display = 'flex'
+    this.overlay.classList.add('visible')
+  }
+
+  updateHighScore(score: number): void {
+    this.highScoreEl.textContent =
+      score > 0 ? `High Score: ${score.toLocaleString()}` : 'High Score: —'
+  }
+
+  setOnLeaderboardOpen(cb: () => void): void {
+    this.onLeaderboardOpen = cb
   }
 
   hide(): void {

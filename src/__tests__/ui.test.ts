@@ -172,9 +172,9 @@ describe('UIManager', () => {
     expect(overlay.children[1].style['display']).toBe('flex') // pause visible
   })
 
-  it('overlay has three child screens', () => {
+  it('overlay has four child screens', () => {
     const overlay = container.children[0]
-    expect(overlay.children).toHaveLength(3)
+    expect(overlay.children).toHaveLength(4)
   })
 
   it('showTouchControls() adds visible class to touch-controls', () => {

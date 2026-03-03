@@ -27,6 +27,8 @@ export class Renderer {
   private rows = 20
   private boardOffsetX: number
   private dpr = 1
+  private ghostEnabled = true
+  private gridEnabled = true
 
   constructor(canvas: HTMLCanvasElement, cellSize = 30) {
     this.ctx = canvas.getContext('2d')!
@@ -135,7 +137,16 @@ export class Renderer {
     }
   }
 
+  setGhostEnabled(v: boolean): void {
+    this.ghostEnabled = v
+  }
+
+  setGridEnabled(v: boolean): void {
+    this.gridEnabled = v
+  }
+
   drawGhostPiece(piece: Piece, dropY: number): void {
+    if (!this.ghostEnabled) return
     if (dropY === piece.y) return
     const color = TETROMINO_COLORS[piece.type]
     const cs = this.cellSize
@@ -162,6 +173,7 @@ export class Renderer {
   }
 
   drawGrid(): void {
+    if (!this.gridEnabled) return
     const theme = themeManager.getTheme()
     this.ctx.save()
     this.ctx.strokeStyle = theme.grid

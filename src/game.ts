@@ -49,6 +49,7 @@ export class Game {
   private scoreManager = new ScoreManager()
   private normalDropInterval = 1000
   private dropInterval = 1000
+  private softDropFactor = 20
   private dropAccumulator = 0
   private lastTime = 0
   private rafId = 0
@@ -209,7 +210,7 @@ export class Game {
     const softDropHeld = this.input.isKeyDown(GameAction.SOFT_DROP)
     if (softDropHeld && !this.softDropping) {
       this.softDropping = true
-      this.dropInterval = 50
+      this.dropInterval = this.normalDropInterval / this.softDropFactor
     } else if (!softDropHeld && this.softDropping) {
       this.softDropping = false
       this.dropInterval = this.normalDropInterval
@@ -622,5 +623,20 @@ export class Game {
 
   getDropInterval(): number {
     return this.dropInterval
+  }
+
+  setSoftDropFactor(sdf: number): void {
+    this.softDropFactor = Math.max(1, sdf)
+    if (this.softDropping) {
+      this.dropInterval = this.normalDropInterval / this.softDropFactor
+    }
+  }
+
+  getInputManager(): InputManager {
+    return this.input
+  }
+
+  getRenderer(): Renderer {
+    return this.renderer
   }
 }

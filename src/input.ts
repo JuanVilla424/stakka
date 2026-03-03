@@ -228,6 +228,17 @@ export class InputManager {
     return actions
   }
 
+  setDasDelay(ms: number): void {
+    this.dasDelay = Math.max(0, ms)
+    this.dasTimer = { left: 0, right: 0 }
+    this.dasCharged = { left: false, right: false }
+  }
+
+  setArrRate(ms: number): void {
+    this.arrRate = Math.max(0, ms)
+    this.arrTimer = { left: 0, right: 0 }
+  }
+
   reset(): void {
     this.keysDown.clear()
     this.processedKeys.clear()
