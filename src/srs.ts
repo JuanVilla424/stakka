@@ -213,6 +213,8 @@ export function detectTSpin(
   const bothFrontOccupied =
     isBlocked(frontA.x, frontA.y) && isBlocked(frontB.x, frontB.y)
 
+  // Kick index 4 (last-resort kick) with 3+ corners = full T-Spin override
+  if (kickIndex === 4) return 'full'
   if (kickIndex === 0 || !bothFrontOccupied) return 'mini'
   return 'full'
 }

@@ -144,6 +144,56 @@ describe('tryRotate', () => {
       expect(piece.rotation).toBe((4 - i) % 4)
     }
   })
+
+  it('T-piece: wall kick off right wall on CW rotation', () => {
+    // T at x=8, rotation=3 occupies cols 8-9 (right wall).
+    // CW targets rotation=0; basic position puts col 10 OOB.
+    // Kick test 1 (-1,0) shifts to x=7 which fits.
+    const piece = new Piece(TetrominoType.T, 8, 5, 3)
+    const result = tryRotate(piece, board, 1)
+    expect(result.success).toBe(true)
+    expect(result.kickIndex).toBe(1)
+    expect(piece.x).toBe(7)
+    expect(piece.rotation).toBe(0)
+  })
+
+  it('J-piece: wall kick off left wall on CW rotation', () => {
+    // J at x=-1, rotation=1 occupies cols 0-1 (valid on board).
+    // CW targets rotation=2; basic position puts col -1 OOB.
+    // Kick test 1 (+1,0) shifts to x=0 which fits.
+    const piece = new Piece(TetrominoType.J, -1, 5, 1)
+    const result = tryRotate(piece, board, 1)
+    expect(result.success).toBe(true)
+    expect(result.kickIndex).toBe(1)
+    expect(piece.x).toBe(0)
+    expect(piece.rotation).toBe(2)
+  })
+
+  it('S-piece: floor kick at bottom of board', () => {
+    // S at x=4, y=20, rotation=0 occupies rows 20-21 (valid).
+    // CW targets rotation=1; basic position puts row 22 OOB.
+    // Kick test 1 also fails (row 22). Kick test 2 (-1,-1) shifts up one row to fit.
+    const piece = new Piece(TetrominoType.S, 4, 20, 0)
+    const result = tryRotate(piece, board, 1)
+    expect(result.success).toBe(true)
+    expect(result.kickIndex).toBe(2)
+    expect(piece.x).toBe(3)
+    expect(piece.y).toBe(19)
+    expect(piece.rotation).toBe(1)
+  })
+
+  it('I-piece: floor kick when horizontal at bottom row', () => {
+    // I at x=4, y=19, rotation=0 occupies row 20 (valid).
+    // CW targets rotation=1: vertical at col 6, rows 19-22 — row 22 OOB.
+    // Tests 0-3 all fail. Kick test 4 (+1,-2) shifts up 2 rows and right 1 to fit.
+    const piece = new Piece(TetrominoType.I, 4, 19, 0)
+    const result = tryRotate(piece, board, 1)
+    expect(result.success).toBe(true)
+    expect(result.kickIndex).toBe(4)
+    expect(piece.x).toBe(5)
+    expect(piece.y).toBe(17)
+    expect(piece.rotation).toBe(1)
+  })
 })
 
 describe('detectTSpin', () => {
@@ -238,5 +288,16 @@ describe('detectTSpin', () => {
     board.setCell(6, 12, 1) // bottom-right (front)
     board.setCell(4, 10, 1) // top-left (back)
     expect(detectTSpin(piece, board, true, 3)).toBe('full')
+  })
+
+  it('kick index 4 override: returns full even when front corners not both filled', () => {
+    // kickIndex=4 (last-resort kick) + 3 corners → full T-spin regardless of front corners
+    const piece = new Piece(TetrominoType.T, 4, 10, 2)
+    // center (5,11), rotation=2 front: bottom-left (4,12) and bottom-right (6,12)
+    board.setCell(4, 10, 1) // top-left (back)
+    board.setCell(6, 10, 1) // top-right (back)
+    board.setCell(4, 12, 1) // bottom-left (front) — only one front corner filled
+    // Normally this would be mini (not both front), but kickIndex=4 overrides to full
+    expect(detectTSpin(piece, board, true, 4)).toBe('full')
   })
 })
