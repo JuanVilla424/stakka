@@ -79,6 +79,7 @@ function buildStartScreen(): HTMLElement {
     ['Space', 'Hard Drop'],
     ['C / Shift', 'Hold'],
     ['Esc', 'Pause'],
+    ['M', 'Mute'],
   ]
   for (const [key, action] of controls) {
     const row = el('div')

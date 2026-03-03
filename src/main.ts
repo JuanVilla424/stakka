@@ -29,6 +29,10 @@ game.setOnStateChange((state) => {
 })
 
 document.addEventListener('keydown', (e: KeyboardEvent) => {
+  if (e.key === 'm' || e.key === 'M') {
+    audio.toggleMute()
+    return
+  }
   const state = game.getState()
   if (state === GameState.IDLE || state === GameState.GAME_OVER) {
     if (e.key === 'Enter' || e.key === 'r' || e.key === 'R') {

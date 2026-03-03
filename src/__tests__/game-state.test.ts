@@ -30,6 +30,9 @@ function createMockCanvas(): HTMLCanvasElement {
       createLinearGradient: () => ({ addColorStop: () => {} }),
       roundRect: () => {},
     }),
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 300, height: 600 }),
     width: 0,
     height: 0,
   } as unknown as HTMLCanvasElement

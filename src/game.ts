@@ -188,6 +188,9 @@ export class Game {
         case GameAction.HOLD:
           this.holdCurrentPiece()
           break
+        case GameAction.MUTE:
+          audio.toggleMute()
+          break
       }
     }
 

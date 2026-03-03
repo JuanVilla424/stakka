@@ -8,6 +8,7 @@ export enum GameAction {
   HOLD = 'HOLD',
   PAUSE = 'PAUSE',
   RESTART = 'RESTART',
+  MUTE = 'MUTE',
 }
 
 const DEFAULT_BINDINGS: [string, GameAction][] = [
@@ -26,6 +27,8 @@ const DEFAULT_BINDINGS: [string, GameAction][] = [
   ['Escape', GameAction.PAUSE],
   ['F1', GameAction.PAUSE],
   ['r', GameAction.RESTART],
+  ['m', GameAction.MUTE],
+  ['M', GameAction.MUTE],
 ]
 
 // Actions that fire once per keydown (not repeating)
@@ -36,6 +39,7 @@ const SINGLE_PRESS_ACTIONS = new Set<GameAction>([
   GameAction.HOLD,
   GameAction.PAUSE,
   GameAction.RESTART,
+  GameAction.MUTE,
 ])
 
 export interface InputConfig {
