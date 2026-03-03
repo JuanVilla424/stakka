@@ -29,9 +29,15 @@ export class Renderer {
   private dpr = 1
   private ghostEnabled = true
   private gridEnabled = true
+  private bgGradient: CanvasGradient | null = null
+  private bgGradientH = 0
+  private bgGradientTheme = ''
+  private lightenCache = new Map<string, string>()
 
   constructor(canvas: HTMLCanvasElement, cellSize = 30) {
-    this.ctx = canvas.getContext('2d')!
+    this.ctx = canvas.getContext('2d', {
+      alpha: false,
+    }) as CanvasRenderingContext2D
     this.cellSize = cellSize
     this.boardOffsetX = 5 * cellSize
     this.applyCanvasDimensions()
@@ -65,6 +71,7 @@ export class Renderer {
       this.cellSize = Math.max(16, Math.min(36, raw))
     }
     this.boardOffsetX = 5 * this.cellSize
+    this.bgGradient = null
     this.applyCanvasDimensions()
   }
 
@@ -102,10 +109,19 @@ export class Renderer {
       this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
     }
     const theme = themeManager.getTheme()
-    const gradient = this.ctx.createLinearGradient(0, 0, 0, h)
-    gradient.addColorStop(0, theme.backgroundGradientTop)
-    gradient.addColorStop(1, theme.background)
-    this.ctx.fillStyle = gradient
+    const themeKey = theme.background
+    if (
+      !this.bgGradient ||
+      this.bgGradientH !== h ||
+      this.bgGradientTheme !== themeKey
+    ) {
+      this.bgGradient = this.ctx.createLinearGradient(0, 0, 0, h)
+      this.bgGradient.addColorStop(0, theme.backgroundGradientTop)
+      this.bgGradient.addColorStop(1, theme.background)
+      this.bgGradientH = h
+      this.bgGradientTheme = themeKey
+    }
+    this.ctx.fillStyle = this.bgGradient
     this.ctx.fillRect(0, 0, w, h)
   }
 
@@ -160,15 +176,15 @@ export class Renderer {
       .getBlocks()
       .map((b) => ({ x: b.x, y: b.y - piece.y + dropY }))
 
+    this.ctx.beginPath()
     for (const block of shape) {
       if (block.y >= 2) {
         const cx = this.boardOffsetX + block.x * cs
         const cy = (block.y - 2) * cs
-        this.ctx.beginPath()
         this.ctx.roundRect(cx + 1, cy + 1, cs - 2, cs - 2, 3)
-        this.ctx.stroke()
       }
     }
+    this.ctx.stroke()
     this.ctx.restore()
   }
 
@@ -430,10 +446,15 @@ export class Renderer {
   }
 
   private lighten(hex: string, amount: number): string {
+    const key = `${hex}:${amount}`
+    const cached = this.lightenCache.get(key)
+    if (cached) return cached
     const num = parseInt(hex.slice(1), 16)
     const r = Math.min(255, Math.round(((num >> 16) & 0xff) + 255 * amount))
     const g = Math.min(255, Math.round(((num >> 8) & 0xff) + 255 * amount))
     const b = Math.min(255, Math.round((num & 0xff) + 255 * amount))
-    return `rgb(${r},${g},${b})`
+    const result = `rgb(${r},${g},${b})`
+    this.lightenCache.set(key, result)
+    return result
   }
 }

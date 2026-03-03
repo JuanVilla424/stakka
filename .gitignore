@@ -5,3 +5,8 @@ dist
 CLAUDE.md
 MEMORY.md
 CONTEXT.md
+venv/
+*.log
+.DS_Store
+coverage/
+.tmpl-src/
