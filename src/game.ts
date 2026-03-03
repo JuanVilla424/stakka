@@ -103,7 +103,7 @@ export class Game {
 
   private spawnPiece(): void {
     const type = this.randomizer.next()
-    const piece = new Piece(type)
+    const piece = new Piece(type, 3, 1)
     if (this.board.checkCollision(piece, 0, 0, piece.rotation)) {
       this.state = GameState.GAME_OVER
       this.currentPiece = null
