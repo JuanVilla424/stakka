@@ -21,6 +21,7 @@ body {
 }
 
 #app {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,4 +29,141 @@ body {
 
 #game-canvas {
   display: block;
+}
+
+/* ── Overlay ── */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+  z-index: 10;
+}
+
+.overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.overlay-screen {
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+  color: #ffffff;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.game-title {
+  font-size: 72px;
+  font-weight: 900;
+  letter-spacing: 12px;
+  color: #00d4ff;
+  text-shadow:
+    0 0 30px rgba(0, 212, 255, 0.8),
+    0 0 60px rgba(0, 212, 255, 0.4);
+}
+
+.pause-title {
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: #ffcc00;
+  text-shadow: 0 0 20px rgba(255, 204, 0, 0.6);
+}
+
+.gameover-title {
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: #ff4444;
+  text-shadow: 0 0 20px rgba(255, 68, 68, 0.6);
+  animation: slideIn 400ms ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.prompt {
+  font-size: 18px;
+  color: #cccccc;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.controls-legend {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px 24px;
+  font-size: 13px;
+  color: #888888;
+}
+
+.controls-legend div {
+  display: contents;
+}
+
+.controls-legend span:first-child {
+  text-align: right;
+  color: #aaaaaa;
+  font-weight: bold;
+}
+
+.controls-legend span:last-child {
+  text-align: left;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-row {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+}
+
+.stat-label {
+  color: #888888;
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.stat-value {
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 18px;
 }

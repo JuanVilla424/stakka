@@ -6,6 +6,8 @@ import {
 } from './piece'
 import type { Board } from './board'
 
+export type ScoreLabel = { text: string; age: number }
+
 export class Renderer {
   private ctx: CanvasRenderingContext2D
   private cellSize: number
@@ -219,7 +221,7 @@ export class Renderer {
     score = 0,
     level = 1,
     lines = 0,
-    scorePopups: { label: string; alpha: number }[] = []
+    scoreLabels: ScoreLabel[] = []
   ): void {
     this.clear()
     this.drawHoldPanel(holdPiece, canHold)
@@ -233,7 +235,7 @@ export class Renderer {
       this.drawPiece(piece, lockProgress)
     }
     this.drawGrid()
-    this.drawScorePopups(scorePopups)
+    this.drawScoreLabels(scoreLabels)
   }
 
   private drawScorePanel(score: number, level: number, lines: number): void {
@@ -267,8 +269,8 @@ export class Renderer {
     ctx.restore()
   }
 
-  private drawScorePopups(popups: { label: string; alpha: number }[]): void {
-    if (popups.length === 0) return
+  private drawScoreLabels(labels: ScoreLabel[]): void {
+    if (labels.length === 0) return
     const ctx = this.ctx
     const boardCenterX = this.boardOffsetX + (this.cols * this.cellSize) / 2
     const baseY = this.rows * this.cellSize * 0.35
@@ -277,13 +279,13 @@ export class Renderer {
     ctx.textAlign = 'center'
     ctx.font = 'bold 18px monospace'
 
-    popups.forEach((popup, i) => {
-      const alpha = Math.max(0, popup.alpha)
-      ctx.globalAlpha = alpha
+    labels.forEach((label, i) => {
+      const opacity = Math.max(0, 1 - label.age / 1500)
+      ctx.globalAlpha = opacity
       ctx.shadowColor = 'rgba(0,0,0,0.8)'
       ctx.shadowBlur = 4
 
-      const lines = popup.label.split('\n')
+      const lines = label.text.split('\n')
       lines.forEach((line, li) => {
         const isCombo = line.startsWith('COMBO')
         ctx.fillStyle = isCombo ? '#ffcc00' : '#ffffff'

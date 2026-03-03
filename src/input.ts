@@ -76,6 +76,7 @@ export class InputManager {
   }
 
   detach(): void {
+    if (typeof document === 'undefined') return
     document.removeEventListener('keydown', this.boundKeyDown)
     document.removeEventListener('keyup', this.boundKeyUp)
   }

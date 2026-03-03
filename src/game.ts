@@ -2,7 +2,7 @@ import { Board } from './board'
 import { GameAction, InputManager } from './input'
 import { Piece, TetrominoType } from './piece'
 import { BagRandomizer } from './randomizer'
-import { Renderer } from './renderer'
+import { Renderer, type ScoreLabel } from './renderer'
 import { ScoreManager } from './scoring'
 import { tryRotate, detectTSpin } from './srs'
 
@@ -31,17 +31,22 @@ export class Game {
   private lastTime = 0
   private rafId = 0
   private softDropping = false
-  private scorePopups: { label: string; startTime: number }[] = []
+  private scorePopups: { text: string; startTime: number }[] = []
   private lockTimer = 0
   private lockResets = 0
   private lockDelayActive = false
   private lowestY = 0
+  private onStateChange?: (state: GameState) => void
 
   constructor(canvas: HTMLCanvasElement) {
     this.board = new Board()
     this.renderer = new Renderer(canvas)
     this.randomizer = new BagRandomizer()
     this.input = new InputManager()
+  }
+
+  setOnStateChange(cb: (state: GameState) => void): void {
+    this.onStateChange = cb
   }
 
   start(): void {
@@ -54,10 +59,15 @@ export class Game {
     this.lastTime = 0
     this.holdPiece = null
     this.canHold = true
+    this.softDropping = false
+    this.lockDelayActive = false
+    this.lockTimer = 0
+    this.lockResets = 0
     this.scorePopups = []
     this.state = GameState.PLAYING
     this.spawnPiece()
     if (this.state === GameState.PLAYING) {
+      this.input.reset()
       this.input.attach()
       this.rafId = requestAnimationFrame((t) => this.gameLoop(t))
     }
@@ -68,6 +78,7 @@ export class Game {
     this.state = GameState.PAUSED
     this.input.detach()
     cancelAnimationFrame(this.rafId)
+    this.onStateChange?.(GameState.PAUSED)
   }
 
   resume(): void {
@@ -165,9 +176,9 @@ export class Game {
       this.dropAccumulator -= this.dropInterval
     }
 
-    // Prune expired score popups (older than 1 second)
+    // Prune expired score labels (older than 1500ms)
     this.scorePopups = this.scorePopups.filter(
-      (p) => timestamp - p.startTime < 1000
+      (p) => timestamp - p.startTime < 1500
     )
 
     const ghostY = this.currentPiece
@@ -176,6 +187,10 @@ export class Game {
     const lockProgress = this.lockDelayActive
       ? Math.max(0, 1 - this.lockTimer / 500)
       : 0
+    const scoreLabels: ScoreLabel[] = this.scorePopups.map((p) => ({
+      text: p.text,
+      age: timestamp - p.startTime,
+    }))
     this.renderer.drawFrame(
       this.board,
       this.currentPiece,
@@ -187,10 +202,7 @@ export class Game {
       this.scoreManager.score,
       this.scoreManager.level,
       this.scoreManager.totalLines,
-      this.scorePopups.map((p) => ({
-        label: p.label,
-        alpha: 1 - (timestamp - p.startTime) / 1000,
-      }))
+      scoreLabels
     )
 
     if (this.state === GameState.PLAYING) {
@@ -235,7 +247,7 @@ export class Game {
     const cleared = this.board.clearLines()
     const event = this.scoreManager.processLineClear(cleared.length, tSpinType)
     if (event.label) {
-      this.scorePopups.push({ label: event.label, startTime: this.lastTime })
+      this.scorePopups.push({ text: event.label, startTime: this.lastTime })
     }
     // Update gravity when level changes
     this.normalDropInterval = this.scoreManager.getGravityDelay()
@@ -252,6 +264,8 @@ export class Game {
     if (this.board.checkCollision(piece, 0, 0, piece.rotation)) {
       this.state = GameState.GAME_OVER
       this.currentPiece = null
+      this.input.detach()
+      this.onStateChange?.(GameState.GAME_OVER)
       return
     }
     this.currentPiece = piece
@@ -274,6 +288,8 @@ export class Game {
       if (this.board.checkCollision(newPiece, 0, 0, newPiece.rotation)) {
         this.state = GameState.GAME_OVER
         this.currentPiece = null
+        this.input.detach()
+        this.onStateChange?.(GameState.GAME_OVER)
         return
       }
       this.currentPiece = newPiece
@@ -387,6 +403,10 @@ export class Game {
   }
 
   getTotalLines(): number {
+    return this.scoreManager.totalLines
+  }
+
+  getLines(): number {
     return this.scoreManager.totalLines
   }
 
