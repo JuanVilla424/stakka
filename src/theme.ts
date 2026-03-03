@@ -137,6 +137,12 @@ export class ThemeManager {
     root.setProperty('--border', t.border)
     root.setProperty('--overlay', t.overlay)
     root.setProperty('--accent', t.accent)
+    if (typeof document.querySelector === 'function') {
+      const metaTheme = document.querySelector(
+        'meta[name="theme-color"]'
+      ) as HTMLMetaElement | null
+      if (metaTheme) metaTheme.content = t.background
+    }
   }
 }
 

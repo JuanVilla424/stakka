@@ -27,6 +27,8 @@
             ? 'light'
             : 'dark'
         document.documentElement.dataset.theme = t
+        var m = document.querySelector('meta[name="theme-color"]')
+        if (m) m.content = t === 'light' ? '#f0f0f0' : '#0a0a0a'
       })()
     </script>
     <link rel="stylesheet" href="/src/style.css" />
