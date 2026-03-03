@@ -2,6 +2,25 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Game, GameState } from '../game'
 import { Piece, TetrominoType } from '../piece'
 
+vi.mock('../audio', () => ({
+  audio: { play: vi.fn(), toggleMute: vi.fn(), ensureResumed: vi.fn() },
+  SoundEffect: {
+    Move: 'move',
+    Rotate: 'rotate',
+    SoftDrop: 'softDrop',
+    HardDrop: 'hardDrop',
+    Lock: 'lock',
+    LineClear: 'lineClear',
+    Tetris: 'tetris',
+    TSpin: 'tSpin',
+    Combo: 'combo',
+    LevelUp: 'levelUp',
+    GameOver: 'gameOver',
+    Hold: 'hold',
+    MenuSelect: 'menuSelect',
+  },
+}))
+
 vi.stubGlobal('requestAnimationFrame', () => 0)
 vi.stubGlobal('cancelAnimationFrame', () => {})
 vi.stubGlobal('document', {
