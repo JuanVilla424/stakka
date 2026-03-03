@@ -1,15 +1,35 @@
-# stakka
+# 🎮 stakka
 
-A modern Tetris clone built with Vite + TypeScript + Canvas 2D.
+A modern Tetris clone built with Vite + TypeScript + Canvas 2D. Fully client-side, no backend required — runs in any modern browser with 60fps rendering and procedural audio.
 
 **Live demo:** https://juanvilla424.github.io/stakka/
 
-![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Status](https://img.shields.io/badge/Status-Active-green.svg)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![Build](https://img.shields.io/github/actions/workflow/status/JuanVilla424/stakka/deploy.yml)](https://github.com/JuanVilla424/stakka/actions)
+[![Status](https://img.shields.io/badge/Status-Active-green.svg)](https://juanvilla424.github.io/stakka/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## ✨ Features
+---
+
+## 📚 Table of Contents
+
+- [🌟 Features](#-features)
+- [🚀 Getting Started](#-getting-started)
+  - [📋 Prerequisites](#-prerequisites)
+  - [🔨 Installation](#-installation)
+  - [🔧 Environment Setup](#-environment-setup)
+  - [🛸 Pre-Commit Hooks](#-pre-commit-hooks)
+- [🎮 Controls](#-controls)
+- [🛠 Tech Stack](#-tech-stack)
+- [📋 Scripts](#-scripts)
+- [🤝 Contributing](#-contributing)
+- [📫 Contact](#-contact)
+- [📜 License](#-license)
+
+---
+
+## 🌟 Features
 
 **Gameplay**
 - SRS rotation system with wall kicks and floor kicks
@@ -43,9 +63,47 @@ A modern Tetris clone built with Vite + TypeScript + Canvas 2D.
 - Master volume control
 - No external audio files required
 
+---
+
+## 🚀 Getting Started
+
+### 📋 Prerequisites
+
+- [Node.js](https://nodejs.org/) 20+
+- [npm](https://www.npmjs.com/) 10+
+- [Python](https://www.python.org/) 3.11+ (for pre-commit hooks)
+
+### 🔨 Installation
+
+```bash
+git clone https://github.com/JuanVilla424/stakka.git
+cd stakka
+```
+
+### 🔧 Environment Setup
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:5173 in your browser.
+
+### 🛸 Pre-Commit Hooks
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.dev.txt
+pre-commit install
+pre-commit install --hook-type pre-push
+```
+
+---
+
 ## 🎮 Controls
 
-### Keyboard
+### ⌨️ Keyboard
 
 | Key | Action |
 |-----|--------|
@@ -58,7 +116,7 @@ A modern Tetris clone built with Vite + TypeScript + Canvas 2D.
 | `Esc` | Pause / resume |
 | `Enter` / `R` | Start / restart |
 
-### Touch
+### 👆 Touch
 
 | Gesture | Action |
 |---------|--------|
@@ -68,6 +126,8 @@ A modern Tetris clone built with Vite + TypeScript + Canvas 2D.
 | Tap | Rotate clockwise |
 | Hold button (on-screen) | Hold piece |
 
+---
+
 ## 🛠 Tech Stack
 
 - **Vite 6** — instant HMR, optimized production builds
@@ -75,14 +135,7 @@ A modern Tetris clone built with Vite + TypeScript + Canvas 2D.
 - **Canvas 2D** — 60fps rendering on a 10×20 grid
 - **Web Audio API** — procedural sound effects with volume control
 
-## 🚀 Setup
-
-```bash
-npm install
-npm run dev
-```
-
-Open http://localhost:5173
+---
 
 ## 📋 Scripts
 
@@ -95,6 +148,20 @@ Open http://localhost:5173
 | `npx eslint src/` | Lint source files |
 | `npx tsc --noEmit` | Type-check without emitting |
 
-## 📄 License
+---
 
-MIT
+## 🤝 Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before submitting a pull request.
+
+---
+
+## 📫 Contact
+
+For questions or security issues, see [SECURITY.md](SECURITY.md) or open an [issue](https://github.com/JuanVilla424/stakka/issues).
+
+---
+
+## 📜 License
+
+2026 - This project is licensed under the [MIT License](LICENSE). You are free to use, modify, and distribute this software under the terms of the MIT license. For more details, please refer to the [LICENSE](LICENSE) file included in this repository.

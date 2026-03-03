@@ -4,7 +4,7 @@ We welcome contributions to stakka! To make sure the process goes smoothly, plea
 
 ## 📋 Code of Conduct
 
-Please note that all participants in our project are expected to follow our [Code of Conduct](#-code-of-conduct). Make sure to review it before contributing.
+Please note that all participants in our project are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md). Make sure to review it before contributing.
 
 ## 🛠 How to Contribute
 
@@ -20,15 +20,14 @@ Please note that all participants in our project are expected to follow our [Cod
    Implement your feature or fix the bug in your branch. Make sure to include tests where applicable and follow coding standards.
 
 4. **Test your changes**:
-   Run the test suite to ensure your changes don’t break any functionality:
+   Run the test suite to ensure your changes don't break any functionality:
 
-   docker-compose exec backend pytest # For backend tests
-   docker-compose exec frontend npm test # For frontend tests
+   npm run test
 
 5. **Commit your changes**:
    Use meaningful commit messages that explain what you have done:
 
-   git commit -m "Add feature/fix: Description of changes"
+   git commit -m "feat(core): add feature description"
 
 6. **Push your changes**:
    Push your changes to your fork:
@@ -36,18 +35,21 @@ Please note that all participants in our project are expected to follow our [Cod
    git push origin feature/your-feature-name
 
 7. **Submit a Pull Request**:
-   Create a pull request on the main repository, detailing the changes you’ve made. Link any issues your changes resolve and provide context.
+   Create a pull request on the main repository, detailing the changes you've made. Link any issues your changes resolve and provide context.
 
 ## 📑 Guidelines for Contributions
 
-- **Lint your code** before submitting a pull request. We use [ESLint](https://eslint.org/) for frontend and [pylint](https://www.pylint.org/) for backend linting.
-- Ensure **test coverage** for your code. Uncovered code may delay the approval process.
-- Write clear, concise **commit messages**.
+- **Lint your code** before submitting a pull request. We use [ESLint](https://eslint.org/) for linting:
 
-Thank you for helping improve!
+  npx eslint src/
+
+- Ensure **test coverage** for your code. Uncovered code may delay the approval process.
+- Write clear, concise **commit messages** following the format `type(core): description`.
+
+Thank you for helping improve stakka!
 
 ---
 
 ## 📜 License
 
-2026 - This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html). You are free to use, modify, and distribute this software under the terms of the GPL-3.0 license. For more details, please refer to the [LICENSE](LICENSE) file included in this repository.
+2026 - This project is licensed under the [MIT License](LICENSE). You are free to use, modify, and distribute this software under the terms of the MIT license. For more details, please refer to the [LICENSE](LICENSE) file included in this repository.
