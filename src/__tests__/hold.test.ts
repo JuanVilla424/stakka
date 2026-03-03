@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { Piece, TetrominoType } from '../piece'
 import { Game, GameState } from '../game'
+import { BagRandomizer } from '../randomizer'
 
 function createMockCanvas(): HTMLCanvasElement {
   return {
@@ -117,6 +118,15 @@ describe('hold piece', () => {
     expect(game.isLockDelayActive()).toBe(false)
     expect(game.getLockTimer()).toBe(0)
   })
+
+  it('hold does nothing when there is no current piece', () => {
+    const game = new Game(createMockCanvas())
+    ;(game as unknown as { state: GameState }).state = GameState.PAUSED
+    ;(game as unknown as GameInternal).holdPiece = TetrominoType.Z
+    ;(game as unknown as GameInternal).holdCurrentPiece()
+    expect(game.getHoldPiece()).toBe(TetrominoType.Z)
+    expect(game.getCurrentPiece()).toBeNull()
+  })
 })
 
 describe('next piece preview', () => {
@@ -148,5 +158,29 @@ describe('next piece preview', () => {
     const first = game.getNextPieces(1)[0]
     const firstAgain = game.getNextPieces(1)[0]
     expect(firstAgain).toBe(first)
+  })
+})
+
+describe('peek consistency', () => {
+  it('peek returns pieces consistent with next() calls', () => {
+    const r = new BagRandomizer()
+    // Consume 5 items, leaving 2 in the bag
+    for (let i = 0; i < 5; i++) r.next()
+    const peeked = r.peek(5)
+    expect(peeked).toHaveLength(5)
+    for (let i = 0; i < 5; i++) {
+      expect(r.next()).toBe(peeked[i])
+    }
+  })
+
+  it('peek across bag boundary matches next()', () => {
+    const r = new BagRandomizer()
+    // Consume 6 items, leaving 1 in the bag — peek(5) spans into next bag
+    for (let i = 0; i < 6; i++) r.next()
+    const peeked = r.peek(5)
+    expect(peeked).toHaveLength(5)
+    for (let i = 0; i < 5; i++) {
+      expect(r.next()).toBe(peeked[i])
+    }
   })
 })
