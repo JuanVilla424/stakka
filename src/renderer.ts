@@ -7,6 +7,7 @@ import {
 import type { Board } from './board'
 import type { PopupManager } from './effects'
 import type { AnimationManager } from './animations'
+import { themeManager } from './theme'
 
 function formatNumber(n: number): string {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -57,9 +58,10 @@ export class Renderer {
   clear(): void {
     const w = 2 * this.boardOffsetX + this.cols * this.cellSize
     const h = this.rows * this.cellSize
+    const theme = themeManager.getTheme()
     const gradient = this.ctx.createLinearGradient(0, 0, 0, h)
-    gradient.addColorStop(0, '#0d0d14')
-    gradient.addColorStop(1, '#0a0a0a')
+    gradient.addColorStop(0, theme.backgroundGradientTop)
+    gradient.addColorStop(1, theme.background)
     this.ctx.fillStyle = gradient
     this.ctx.fillRect(0, 0, w, h)
   }
@@ -96,8 +98,9 @@ export class Renderer {
     if (dropY === piece.y) return
     const color = TETROMINO_COLORS[piece.type]
     const cs = this.cellSize
+    const theme = themeManager.getTheme()
     this.ctx.save()
-    this.ctx.globalAlpha = 0.3
+    this.ctx.globalAlpha = theme.ghostAlpha
     this.ctx.strokeStyle = color
     this.ctx.lineWidth = 2
 
@@ -118,8 +121,9 @@ export class Renderer {
   }
 
   drawGrid(): void {
+    const theme = themeManager.getTheme()
     this.ctx.save()
-    this.ctx.strokeStyle = '#1a1a1a'
+    this.ctx.strokeStyle = theme.grid
     this.ctx.lineWidth = 0.5
     this.ctx.beginPath()
     for (let col = 0; col <= this.cols; col++) {
@@ -137,8 +141,9 @@ export class Renderer {
   }
 
   drawPanelSeparators(): void {
+    const theme = themeManager.getTheme()
     this.ctx.save()
-    this.ctx.strokeStyle = '#1a1a1a'
+    this.ctx.strokeStyle = theme.grid
     this.ctx.lineWidth = 1
     this.ctx.beginPath()
     this.ctx.moveTo(this.boardOffsetX, 0)
@@ -153,8 +158,9 @@ export class Renderer {
   }
 
   drawBoardBorder(): void {
+    const theme = themeManager.getTheme()
     this.ctx.save()
-    this.ctx.strokeStyle = '#333333'
+    this.ctx.strokeStyle = theme.border
     this.ctx.lineWidth = 2
     this.ctx.strokeRect(
       this.boardOffsetX,
@@ -167,9 +173,10 @@ export class Renderer {
 
   drawHoldPanel(holdPiece: TetrominoType | null, canHold: boolean): void {
     const panelCenterX = this.boardOffsetX / 2
+    const theme = themeManager.getTheme()
 
     this.ctx.save()
-    this.ctx.fillStyle = '#888888'
+    this.ctx.fillStyle = theme.textMuted
     this.ctx.font = 'bold 13px monospace'
     this.ctx.textAlign = 'center'
     this.ctx.fillText('HOLD', panelCenterX, 28)
@@ -183,9 +190,10 @@ export class Renderer {
   drawNextQueue(nextPieces: TetrominoType[]): void {
     const boardRight = this.boardOffsetX + this.cols * this.cellSize
     const panelCenterX = boardRight + this.boardOffsetX / 2
+    const theme = themeManager.getTheme()
 
     this.ctx.save()
-    this.ctx.fillStyle = '#888888'
+    this.ctx.fillStyle = theme.textMuted
     this.ctx.font = 'bold 13px monospace'
     this.ctx.textAlign = 'center'
     this.ctx.fillText('NEXT', panelCenterX, 28)
@@ -327,14 +335,16 @@ export class Renderer {
     ctx.save()
     ctx.textAlign = 'center'
 
+    const theme = themeManager.getTheme()
+
     const lbl = (text: string, y: number): void => {
-      ctx.fillStyle = '#888888'
+      ctx.fillStyle = theme.textMuted
       ctx.font = 'bold 11px monospace'
       ctx.fillText(text, panelCenterX, y)
     }
 
     const val = (text: string, y: number): void => {
-      ctx.fillStyle = '#ffffff'
+      ctx.fillStyle = theme.text
       ctx.font = 'bold 16px monospace'
       ctx.fillText(text, panelCenterX, y)
     }

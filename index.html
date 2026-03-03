@@ -7,6 +7,16 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Stakka</title>
+    <script>
+      ;(function () {
+        var t = localStorage.getItem('stakka-theme')
+        if (!t)
+          t = window.matchMedia('(prefers-color-scheme: light)').matches
+            ? 'light'
+            : 'dark'
+        document.documentElement.dataset.theme = t
+      })()
+    </script>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
