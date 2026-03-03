@@ -3,6 +3,7 @@ import { GameAction, InputManager } from './input'
 import { Piece, TetrominoType } from './piece'
 import { BagRandomizer } from './randomizer'
 import { Renderer } from './renderer'
+import { ScoreManager } from './scoring'
 import { tryRotate, detectTSpin } from './srs'
 
 export enum GameState {
@@ -23,13 +24,14 @@ export class Game {
   private lastMoveWasRotation = false
   private lastKickIndex = 0
   private state: GameState = GameState.IDLE
+  private scoreManager = new ScoreManager()
   private normalDropInterval = 1000
   private dropInterval = 1000
   private dropAccumulator = 0
   private lastTime = 0
   private rafId = 0
-  private score = 0
   private softDropping = false
+  private scorePopups: { label: string; startTime: number }[] = []
   private lockTimer = 0
   private lockResets = 0
   private lockDelayActive = false
@@ -45,10 +47,14 @@ export class Game {
   start(): void {
     this.board.reset()
     this.randomizer.reset()
+    this.scoreManager.reset()
+    this.normalDropInterval = this.scoreManager.getGravityDelay()
+    this.dropInterval = this.normalDropInterval
     this.dropAccumulator = 0
     this.lastTime = 0
     this.holdPiece = null
     this.canHold = true
+    this.scorePopups = []
     this.state = GameState.PLAYING
     this.spawnPiece()
     if (this.state === GameState.PLAYING) {
@@ -78,6 +84,7 @@ export class Game {
     this.input.detach()
     this.input.reset()
     this.board.reset()
+    this.scoreManager.reset()
     this.currentPiece = null
     this.holdPiece = null
     this.canHold = true
@@ -86,6 +93,7 @@ export class Game {
     this.lockDelayActive = false
     this.lockTimer = 0
     this.lockResets = 0
+    this.scorePopups = []
   }
 
   private gameLoop(timestamp: number): void {
@@ -157,6 +165,11 @@ export class Game {
       this.dropAccumulator -= this.dropInterval
     }
 
+    // Prune expired score popups (older than 1 second)
+    this.scorePopups = this.scorePopups.filter(
+      (p) => timestamp - p.startTime < 1000
+    )
+
     const ghostY = this.currentPiece
       ? this.getDropPosition(this.currentPiece)
       : null
@@ -170,7 +183,14 @@ export class Game {
       lockProgress,
       this.holdPiece,
       this.canHold,
-      this.randomizer.peek(5)
+      this.randomizer.peek(5),
+      this.scoreManager.score,
+      this.scoreManager.level,
+      this.scoreManager.totalLines,
+      this.scorePopups.map((p) => ({
+        label: p.label,
+        alpha: 1 - (timestamp - p.startTime) / 1000,
+      }))
     )
 
     if (this.state === GameState.PLAYING) {
@@ -189,7 +209,7 @@ export class Game {
     )
     if (canMoveDown) {
       this.currentPiece.y += 1
-      if (this.softDropping) this.score += 1
+      if (this.softDropping) this.scoreManager.addSoftDrop(1)
       if (this.currentPiece.y > this.lowestY) {
         this.lowestY = this.currentPiece.y
         this.lockResets = 0
@@ -205,14 +225,23 @@ export class Game {
 
   private lockPieceFull(): void {
     if (!this.currentPiece) return
-    detectTSpin(
+    const tSpinType = detectTSpin(
       this.currentPiece,
       this.board,
       this.lastMoveWasRotation,
       this.lastKickIndex
     )
     this.board.lockPiece(this.currentPiece)
-    this.board.clearLines()
+    const cleared = this.board.clearLines()
+    const event = this.scoreManager.processLineClear(cleared.length, tSpinType)
+    if (event.label) {
+      this.scorePopups.push({ label: event.label, startTime: this.lastTime })
+    }
+    // Update gravity when level changes
+    this.normalDropInterval = this.scoreManager.getGravityDelay()
+    if (!this.softDropping) {
+      this.dropInterval = this.normalDropInterval
+    }
     this.canHold = true
     this.spawnPiece()
   }
@@ -308,7 +337,7 @@ export class Game {
       )
     ) {
       this.currentPiece.y += 1
-      this.score += 1
+      this.scoreManager.addSoftDrop(1)
       this.dropAccumulator = 0
       this.lastMoveWasRotation = false
       this.lastKickIndex = 0
@@ -319,7 +348,7 @@ export class Game {
     if (!this.currentPiece || this.state !== GameState.PLAYING) return
     const dropY = this.getDropPosition(this.currentPiece)
     const distance = dropY - this.currentPiece.y
-    this.score += 2 * distance
+    this.scoreManager.addHardDrop(distance)
     this.currentPiece.y = dropY
     this.lockPieceFull()
     this.dropAccumulator = 0
@@ -350,7 +379,15 @@ export class Game {
   }
 
   getScore(): number {
-    return this.score
+    return this.scoreManager.score
+  }
+
+  getLevel(): number {
+    return this.scoreManager.level
+  }
+
+  getTotalLines(): number {
+    return this.scoreManager.totalLines
   }
 
   getCurrentPiece(): Piece | null {

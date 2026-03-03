@@ -215,11 +215,16 @@ export class Renderer {
     lockProgress = 0,
     holdPiece: TetrominoType | null = null,
     canHold = true,
-    nextPieces: TetrominoType[] = []
+    nextPieces: TetrominoType[] = [],
+    score = 0,
+    level = 1,
+    lines = 0,
+    scorePopups: { label: string; alpha: number }[] = []
   ): void {
     this.clear()
     this.drawHoldPanel(holdPiece, canHold)
     this.drawNextQueue(nextPieces)
+    this.drawScorePanel(score, level, lines)
     this.drawBoard(board)
     if (piece && ghostY !== null) {
       this.drawGhostPiece(piece, ghostY)
@@ -228,6 +233,65 @@ export class Renderer {
       this.drawPiece(piece, lockProgress)
     }
     this.drawGrid()
+    this.drawScorePopups(scorePopups)
+  }
+
+  private drawScorePanel(score: number, level: number, lines: number): void {
+    const panelCenterX = this.boardOffsetX / 2
+    const ctx = this.ctx
+
+    ctx.save()
+    ctx.fillStyle = '#888888'
+    ctx.font = 'bold 11px monospace'
+    ctx.textAlign = 'center'
+
+    ctx.fillText('SCORE', panelCenterX, 180)
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 14px monospace'
+    ctx.fillText(String(score), panelCenterX, 198)
+
+    ctx.fillStyle = '#888888'
+    ctx.font = 'bold 11px monospace'
+    ctx.fillText('LEVEL', panelCenterX, 230)
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 14px monospace'
+    ctx.fillText(String(level), panelCenterX, 248)
+
+    ctx.fillStyle = '#888888'
+    ctx.font = 'bold 11px monospace'
+    ctx.fillText('LINES', panelCenterX, 280)
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 14px monospace'
+    ctx.fillText(String(lines), panelCenterX, 298)
+
+    ctx.restore()
+  }
+
+  private drawScorePopups(popups: { label: string; alpha: number }[]): void {
+    if (popups.length === 0) return
+    const ctx = this.ctx
+    const boardCenterX = this.boardOffsetX + (this.cols * this.cellSize) / 2
+    const baseY = this.rows * this.cellSize * 0.35
+
+    ctx.save()
+    ctx.textAlign = 'center'
+    ctx.font = 'bold 18px monospace'
+
+    popups.forEach((popup, i) => {
+      const alpha = Math.max(0, popup.alpha)
+      ctx.globalAlpha = alpha
+      ctx.shadowColor = 'rgba(0,0,0,0.8)'
+      ctx.shadowBlur = 4
+
+      const lines = popup.label.split('\n')
+      lines.forEach((line, li) => {
+        const isCombo = line.startsWith('COMBO')
+        ctx.fillStyle = isCombo ? '#ffcc00' : '#ffffff'
+        ctx.fillText(line, boardCenterX, baseY + i * 60 + li * 22)
+      })
+    })
+
+    ctx.restore()
   }
 
   private lighten(hex: string, amount: number): string {
