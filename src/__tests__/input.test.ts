@@ -2,19 +2,19 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { InputManager, GameAction } from '../input'
 
 type MockKeyEvent = { key: string; preventDefault: () => void }
-type InputManagerPrivate = InputManager & {
+type InputManagerInternal = {
   handleKeyDown: (e: MockKeyEvent) => void
   handleKeyUp: (e: { key: string }) => void
 }
 
 function pressKey(input: InputManager, key: string): void {
   const e: MockKeyEvent = { key, preventDefault: () => {} }
-  ;(input as InputManagerPrivate).handleKeyDown(e)
+  ;(input as unknown as InputManagerInternal).handleKeyDown(e)
 }
 
 function releaseKey(input: InputManager, key: string): void {
   const e = { key }
-  ;(input as InputManagerPrivate).handleKeyUp(e)
+  ;(input as unknown as InputManagerInternal).handleKeyUp(e)
 }
 
 function countAction(actions: GameAction[], action: GameAction): number {
