@@ -119,6 +119,22 @@ export class Renderer {
     this.ctx.restore()
   }
 
+  drawPanelSeparators(): void {
+    this.ctx.save()
+    this.ctx.strokeStyle = '#1a1a1a'
+    this.ctx.lineWidth = 1
+    this.ctx.beginPath()
+    this.ctx.moveTo(this.boardOffsetX, 0)
+    this.ctx.lineTo(this.boardOffsetX, this.rows * this.cellSize)
+    this.ctx.moveTo(this.boardOffsetX + this.cols * this.cellSize, 0)
+    this.ctx.lineTo(
+      this.boardOffsetX + this.cols * this.cellSize,
+      this.rows * this.cellSize
+    )
+    this.ctx.stroke()
+    this.ctx.restore()
+  }
+
   drawBoardBorder(): void {
     this.ctx.save()
     this.ctx.strokeStyle = '#333333'
@@ -252,6 +268,7 @@ export class Renderer {
     this.drawHoldPanel(holdPiece, canHold)
     this.drawNextQueue(nextPieces)
     this.drawScorePanel(score, level, lines, elapsedTime)
+    this.drawPanelSeparators()
     this.drawBoard(board)
     if (piece && ghostY !== null) {
       this.drawGhostPiece(piece, ghostY)
@@ -286,21 +303,21 @@ export class Renderer {
 
     const val = (text: string, y: number): void => {
       ctx.fillStyle = '#ffffff'
-      ctx.font = 'bold 14px monospace'
+      ctx.font = 'bold 16px monospace'
       ctx.fillText(text, panelCenterX, y)
     }
 
-    lbl('SCORE', 180)
-    val(formatNumber(score), 198)
+    lbl('SCORE', 170)
+    val(formatNumber(score), 188)
 
-    lbl('LEVEL', 230)
-    val(String(level), 248)
+    lbl('LEVEL', 220)
+    val(String(level), 238)
 
-    lbl('LINES', 280)
-    val(String(lines), 298)
+    lbl('LINES', 270)
+    val(String(lines), 288)
 
-    lbl('TIME', 330)
-    val(formatTime(elapsedTime), 348)
+    lbl('TIME', 320)
+    val(formatTime(elapsedTime), 338)
 
     ctx.restore()
   }

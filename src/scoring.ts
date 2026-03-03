@@ -4,6 +4,7 @@ export interface ScoreEvent {
   points: number
   label: string
   isBackToBack: boolean
+  color: string
 }
 
 // Gravity delay in ms per level using the guideline formula.
@@ -46,7 +47,7 @@ export class ScoreManager {
     // No lines and no t-spin: reset combo, no points
     if (linesCleared === 0 && tSpinType === 'none') {
       this._combo = -1
-      return { points: 0, label: '', isBackToBack: false }
+      return { points: 0, label: '', isBackToBack: false, color: '#ffffff' }
     }
 
     const level = this._level
@@ -154,7 +155,14 @@ export class ScoreManager {
     this._totalLines += linesCleared
     this._level = this._startingLevel + Math.floor(this._totalLines / 10)
 
-    return { points, label, isBackToBack: applyB2B }
+    let color = '#ffffff'
+    if (tSpinType === 'mini' || tSpinType === 'full') {
+      color = '#a000f0'
+    } else if (linesCleared >= 4) {
+      color = '#ffd700'
+    }
+
+    return { points, label, isBackToBack: applyB2B, color }
   }
 
   addSoftDrop(cells: number): void {

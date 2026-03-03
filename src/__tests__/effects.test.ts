@@ -62,10 +62,10 @@ describe('PopupManager', () => {
   it('popups float upward — y decreases as age increases', () => {
     const pm = new PopupManager()
     pm.addPopup('TETRIS!', 300, 200, '#ffd700')
-    pm.update(400) // t = 0.5, floatY = 200 - 0.5 * 40 = 180
+    pm.update(400) // t = 0.5, easeOutQuad(0.5) = 0.75, offsetY = -30, y = 170
     const ctx = createMockCtx()
     pm.draw(ctx)
-    expect(ctx.fillText).toHaveBeenCalledWith('TETRIS!', 300, 180)
+    expect(ctx.fillText).toHaveBeenCalledWith('TETRIS!', 300, 170)
   })
 
   it('popup alpha decreases to 0.5 at halfway point', () => {
