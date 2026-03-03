@@ -9,7 +9,7 @@
 html,
 body {
   width: 100%;
-  height: 100%;
+  overflow: hidden;
 }
 
 :root {
@@ -48,6 +48,8 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
 }
 
 #app {
@@ -56,6 +58,10 @@ body {
   align-items: center;
   justify-content: center;
   touch-action: none;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
 }
 
 #game-canvas {
@@ -235,6 +241,7 @@ body {
   left: 0;
   right: 0;
   padding: 8px 12px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
   gap: 8px;
   flex-direction: column;
   align-items: center;
@@ -301,5 +308,76 @@ body {
 
   .overlay {
     transition: none;
+  }
+}
+
+/* ── Mobile breakpoint ── */
+@media (max-width: 767px) {
+  .game-title {
+    font-size: 36px;
+    letter-spacing: 6px;
+  }
+
+  .pause-title,
+  .gameover-title {
+    font-size: 28px;
+    letter-spacing: 4px;
+  }
+
+  .prompt {
+    font-size: 14px;
+  }
+
+  .controls-legend {
+    font-size: 11px;
+    gap: 4px 12px;
+  }
+
+  .overlay-content {
+    gap: 16px;
+    padding: 0 16px;
+  }
+
+  .touch-btn {
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 18px;
+  }
+}
+
+/* ── Tablet breakpoint ── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .game-title {
+    font-size: 56px;
+  }
+
+  .overlay-content {
+    gap: 20px;
+  }
+}
+
+/* ── Orientation Warning ── */
+#orientation-warning {
+  display: none;
+}
+
+@media (max-width: 767px) and (orientation: landscape) {
+  #orientation-warning {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: var(--bg);
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 18px;
+    text-align: center;
+    padding: 24px;
+  }
+
+  #app {
+    display: none;
   }
 }
