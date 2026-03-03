@@ -147,6 +147,22 @@ export class UIManager {
       document.body.appendChild(this.themeBtn)
     }
 
+    const canvasEl =
+      typeof container.querySelector === 'function'
+        ? (container.querySelector('canvas') as HTMLCanvasElement | null)
+        : null
+    themeManager.onToggle = () => {
+      if (!canvasEl) return
+      canvasEl.style.transition = 'opacity 100ms ease'
+      canvasEl.style.opacity = '0.7'
+      setTimeout(() => {
+        canvasEl.style.opacity = '1'
+        setTimeout(() => {
+          canvasEl.style.transition = ''
+        }, 100)
+      }, 100)
+    }
+
     this.screenStart = buildStartScreen()
     this.overlay.appendChild(this.screenStart)
 
