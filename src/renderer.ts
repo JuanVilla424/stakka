@@ -299,16 +299,20 @@ export class Renderer {
     if (piece) {
       this.drawPiece(piece, lockProgress)
     }
+    this.drawGrid()
+    this.drawBoardBorder()
     if (animationManager) {
       animationManager.draw(this.ctx)
     }
-    this.drawGrid()
-    this.drawBoardBorder()
+
+    this.ctx.restore()
+
     if (popupManager) {
       popupManager.draw(this.ctx)
     }
-
-    this.ctx.restore()
+    if (animationManager) {
+      animationManager.drawParticles(this.ctx)
+    }
   }
 
   private drawScorePanel(

@@ -57,7 +57,9 @@ export class AnimationManager {
       anim.draw(ctx, t)
     }
     ctx.restore()
+  }
 
+  drawParticles(ctx: CanvasRenderingContext2D): void {
     ctx.save()
     for (const p of this.particles) {
       ctx.globalAlpha = Math.max(0, p.life)

@@ -191,12 +191,12 @@ describe('AnimationManager', () => {
     am.addLineClear([5], [[1, 2, 3, 4, 5, 6, 7, 1, 2, 3]], 30, 150, false)
     am.update(0)
     const ctx = createMockCtx()
-    am.draw(ctx)
+    am.drawParticles(ctx)
     const alphaAfterSpawn = ctx.globalAlpha as number
 
     am.update(400)
     const ctx2 = createMockCtx()
-    am.draw(ctx2)
+    am.drawParticles(ctx2)
     // After 400ms particles have less life
     const alphaAfterTime = ctx2.globalAlpha as number
     expect(alphaAfterTime).toBeLessThanOrEqual(alphaAfterSpawn)
