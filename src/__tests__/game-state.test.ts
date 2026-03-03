@@ -251,3 +251,27 @@ describe('level and lines tracking', () => {
     expect(game.getScore()).toBe(10) // 2 pts per cell
   })
 })
+
+describe('game timer', () => {
+  let game: Game
+
+  beforeEach(() => {
+    game = new Game(createMockCanvas())
+  })
+
+  it('elapsedTime starts at 0', () => {
+    expect(game.getElapsedTime()).toBe(0)
+  })
+
+  it('elapsedTime is 0 after start()', () => {
+    ;(game as unknown as { elapsedTime: number }).elapsedTime = 5000
+    game.start()
+    expect(game.getElapsedTime()).toBe(0)
+  })
+
+  it('elapsedTime is 0 after reset()', () => {
+    ;(game as unknown as { elapsedTime: number }).elapsedTime = 3000
+    game.reset()
+    expect(game.getElapsedTime()).toBe(0)
+  })
+})

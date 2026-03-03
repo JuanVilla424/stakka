@@ -1,8 +1,9 @@
 import { Board } from './board'
+import { PopupManager } from './effects'
 import { GameAction, InputManager } from './input'
 import { Piece, TetrominoType } from './piece'
 import { BagRandomizer } from './randomizer'
-import { Renderer, type ScoreLabel } from './renderer'
+import { Renderer } from './renderer'
 import { ScoreManager } from './scoring'
 import { tryRotate, detectTSpin } from './srs'
 
@@ -11,6 +12,21 @@ export enum GameState {
   PLAYING = 'PLAYING',
   PAUSED = 'PAUSED',
   GAME_OVER = 'GAME_OVER',
+}
+
+const POPUP_BOARD_Y = 200
+
+function popupColor(text: string): string {
+  if (text.startsWith('TETRIS')) return '#ffd700'
+  if (text.startsWith('T-SPIN')) return '#a000f0'
+  if (text.startsWith('COMBO')) return '#ffcc00'
+  return '#ffffff'
+}
+
+function popupFontSize(text: string): number {
+  const m = text.match(/COMBO ×(\d+)/)
+  if (m) return Math.min(28, 18 + parseInt(m[1], 10) * 2)
+  return 18
 }
 
 export class Game {
@@ -31,7 +47,8 @@ export class Game {
   private lastTime = 0
   private rafId = 0
   private softDropping = false
-  private scorePopups: { text: string; startTime: number }[] = []
+  private popupManager = new PopupManager()
+  private elapsedTime = 0
   private lockTimer = 0
   private lockResets = 0
   private lockDelayActive = false
@@ -63,7 +80,8 @@ export class Game {
     this.lockDelayActive = false
     this.lockTimer = 0
     this.lockResets = 0
-    this.scorePopups = []
+    this.popupManager.reset()
+    this.elapsedTime = 0
     this.state = GameState.PLAYING
     this.spawnPiece()
     if (this.state === GameState.PLAYING) {
@@ -104,7 +122,8 @@ export class Game {
     this.lockDelayActive = false
     this.lockTimer = 0
     this.lockResets = 0
-    this.scorePopups = []
+    this.popupManager.reset()
+    this.elapsedTime = 0
   }
 
   private gameLoop(timestamp: number): void {
@@ -113,6 +132,7 @@ export class Game {
     const delta =
       this.lastTime === 0 ? 0 : Math.min(timestamp - this.lastTime, 200)
     this.lastTime = timestamp
+    this.elapsedTime += delta
 
     // Process input actions
     const actions = this.input.update(delta)
@@ -176,10 +196,7 @@ export class Game {
       this.dropAccumulator -= this.dropInterval
     }
 
-    // Prune expired score labels (older than 1500ms)
-    this.scorePopups = this.scorePopups.filter(
-      (p) => timestamp - p.startTime < 1500
-    )
+    this.popupManager.update(delta)
 
     const ghostY = this.currentPiece
       ? this.getDropPosition(this.currentPiece)
@@ -187,10 +204,6 @@ export class Game {
     const lockProgress = this.lockDelayActive
       ? Math.max(0, 1 - this.lockTimer / 500)
       : 0
-    const scoreLabels: ScoreLabel[] = this.scorePopups.map((p) => ({
-      text: p.text,
-      age: timestamp - p.startTime,
-    }))
     this.renderer.drawFrame(
       this.board,
       this.currentPiece,
@@ -202,7 +215,8 @@ export class Game {
       this.scoreManager.score,
       this.scoreManager.level,
       this.scoreManager.totalLines,
-      scoreLabels
+      this.elapsedTime,
+      this.popupManager
     )
 
     if (this.state === GameState.PLAYING) {
@@ -247,7 +261,16 @@ export class Game {
     const cleared = this.board.clearLines()
     const event = this.scoreManager.processLineClear(cleared.length, tSpinType)
     if (event.label) {
-      this.scorePopups.push({ text: event.label, startTime: this.lastTime })
+      const cx = this.renderer.getBoardCenterX()
+      event.label.split('\n').forEach((text, i) => {
+        this.popupManager.addPopup(
+          text,
+          cx,
+          POPUP_BOARD_Y + i * 28,
+          popupColor(text),
+          popupFontSize(text)
+        )
+      })
     }
     // Update gravity when level changes
     this.normalDropInterval = this.scoreManager.getGravityDelay()
@@ -408,6 +431,10 @@ export class Game {
 
   getLines(): number {
     return this.scoreManager.totalLines
+  }
+
+  getElapsedTime(): number {
+    return this.elapsedTime
   }
 
   getCurrentPiece(): Piece | null {

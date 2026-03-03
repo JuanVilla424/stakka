@@ -5,15 +5,24 @@ import {
   type Piece,
 } from './piece'
 import type { Board } from './board'
+import type { PopupManager } from './effects'
 
-export type ScoreLabel = { text: string; age: number }
+function formatNumber(n: number): string {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}
+
+function formatTime(ms: number): string {
+  const totalSec = Math.floor(ms / 1000)
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
 
 export class Renderer {
   private ctx: CanvasRenderingContext2D
   private cellSize: number
   private cols = 10
   private rows = 20
-  // horizontal pixel offset of the board within the canvas (panel width on each side)
   private boardOffsetX: number
 
   constructor(canvas: HTMLCanvasElement, cellSize = 30) {
@@ -24,18 +33,21 @@ export class Renderer {
     canvas.height = this.rows * cellSize // 600px
   }
 
+  getBoardCenterX(): number {
+    return this.boardOffsetX + (this.cols * this.cellSize) / 2
+  }
+
   clear(): void {
-    this.ctx.fillStyle = '#0a0a0a'
-    this.ctx.fillRect(
-      0,
-      0,
-      2 * this.boardOffsetX + this.cols * this.cellSize,
-      this.rows * this.cellSize
-    )
+    const w = 2 * this.boardOffsetX + this.cols * this.cellSize
+    const h = this.rows * this.cellSize
+    const gradient = this.ctx.createLinearGradient(0, 0, 0, h)
+    gradient.addColorStop(0, '#0d0d14')
+    gradient.addColorStop(1, '#0a0a0a')
+    this.ctx.fillStyle = gradient
+    this.ctx.fillRect(0, 0, w, h)
   }
 
   drawBoard(board: Board): void {
-    // Iterate visible rows: grid rows 2-21 map to canvas rows 0-19
     for (let gridRow = 2; gridRow < 22; gridRow++) {
       const canvasRow = gridRow - 2
       for (let col = 0; col < this.cols; col++) {
@@ -107,6 +119,19 @@ export class Renderer {
     this.ctx.restore()
   }
 
+  drawBoardBorder(): void {
+    this.ctx.save()
+    this.ctx.strokeStyle = '#333333'
+    this.ctx.lineWidth = 2
+    this.ctx.strokeRect(
+      this.boardOffsetX,
+      0,
+      this.cols * this.cellSize,
+      this.rows * this.cellSize
+    )
+    this.ctx.restore()
+  }
+
   drawHoldPanel(holdPiece: TetrominoType | null, canHold: boolean): void {
     const panelCenterX = this.boardOffsetX / 2
 
@@ -145,9 +170,8 @@ export class Renderer {
     alpha = 1
   ): void {
     const shape = TETROMINO_SHAPES[type][0]
-    const ps = 22 // preview cell size in pixels
+    const ps = 22
 
-    // Find bounding box of the shape
     let minR = shape.length,
       maxR = -1,
       minC = shape[0].length,
@@ -221,12 +245,13 @@ export class Renderer {
     score = 0,
     level = 1,
     lines = 0,
-    scoreLabels: ScoreLabel[] = []
+    elapsedTime = 0,
+    popupManager: PopupManager | null = null
   ): void {
     this.clear()
     this.drawHoldPanel(holdPiece, canHold)
     this.drawNextQueue(nextPieces)
-    this.drawScorePanel(score, level, lines)
+    this.drawScorePanel(score, level, lines, elapsedTime)
     this.drawBoard(board)
     if (piece && ghostY !== null) {
       this.drawGhostPiece(piece, ghostY)
@@ -235,63 +260,47 @@ export class Renderer {
       this.drawPiece(piece, lockProgress)
     }
     this.drawGrid()
-    this.drawScoreLabels(scoreLabels)
+    this.drawBoardBorder()
+    if (popupManager) {
+      popupManager.draw(this.ctx)
+    }
   }
 
-  private drawScorePanel(score: number, level: number, lines: number): void {
+  private drawScorePanel(
+    score: number,
+    level: number,
+    lines: number,
+    elapsedTime: number
+  ): void {
     const panelCenterX = this.boardOffsetX / 2
     const ctx = this.ctx
 
     ctx.save()
-    ctx.fillStyle = '#888888'
-    ctx.font = 'bold 11px monospace'
     ctx.textAlign = 'center'
 
-    ctx.fillText('SCORE', panelCenterX, 180)
-    ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 14px monospace'
-    ctx.fillText(String(score), panelCenterX, 198)
+    const lbl = (text: string, y: number): void => {
+      ctx.fillStyle = '#888888'
+      ctx.font = 'bold 11px monospace'
+      ctx.fillText(text, panelCenterX, y)
+    }
 
-    ctx.fillStyle = '#888888'
-    ctx.font = 'bold 11px monospace'
-    ctx.fillText('LEVEL', panelCenterX, 230)
-    ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 14px monospace'
-    ctx.fillText(String(level), panelCenterX, 248)
+    const val = (text: string, y: number): void => {
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 14px monospace'
+      ctx.fillText(text, panelCenterX, y)
+    }
 
-    ctx.fillStyle = '#888888'
-    ctx.font = 'bold 11px monospace'
-    ctx.fillText('LINES', panelCenterX, 280)
-    ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 14px monospace'
-    ctx.fillText(String(lines), panelCenterX, 298)
+    lbl('SCORE', 180)
+    val(formatNumber(score), 198)
 
-    ctx.restore()
-  }
+    lbl('LEVEL', 230)
+    val(String(level), 248)
 
-  private drawScoreLabels(labels: ScoreLabel[]): void {
-    if (labels.length === 0) return
-    const ctx = this.ctx
-    const boardCenterX = this.boardOffsetX + (this.cols * this.cellSize) / 2
-    const baseY = this.rows * this.cellSize * 0.35
+    lbl('LINES', 280)
+    val(String(lines), 298)
 
-    ctx.save()
-    ctx.textAlign = 'center'
-    ctx.font = 'bold 18px monospace'
-
-    labels.forEach((label, i) => {
-      const opacity = Math.max(0, 1 - label.age / 1500)
-      ctx.globalAlpha = opacity
-      ctx.shadowColor = 'rgba(0,0,0,0.8)'
-      ctx.shadowBlur = 4
-
-      const lines = label.text.split('\n')
-      lines.forEach((line, li) => {
-        const isCombo = line.startsWith('COMBO')
-        ctx.fillStyle = isCombo ? '#ffcc00' : '#ffffff'
-        ctx.fillText(line, boardCenterX, baseY + i * 60 + li * 22)
-      })
-    })
+    lbl('TIME', 330)
+    val(formatTime(elapsedTime), 348)
 
     ctx.restore()
   }
