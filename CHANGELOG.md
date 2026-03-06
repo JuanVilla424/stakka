@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🐛 Fixed
 
 - Full row capture after piece lock to restore line clear animations
+- Validate localStorage leaderboard entries to reject malformed or injected data
+- Truncate stored player names to 30 characters to prevent oversized input
 
 ### 🗑️ Removed
 
