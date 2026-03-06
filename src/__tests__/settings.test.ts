@@ -167,6 +167,30 @@ describe('SettingsManager', () => {
       const mgr = makeManager()
       expect(mgr.get('das')).toBe(167)
     })
+
+    it('load() keeps defaults when stored value is JSON null', () => {
+      localStorage.setItem('stakka_settings', 'null')
+      const mgr = makeManager()
+      expect(mgr.get('das')).toBe(167)
+    })
+
+    it('load() keeps defaults when stored value is a JSON string', () => {
+      localStorage.setItem('stakka_settings', '"just-a-string"')
+      const mgr = makeManager()
+      expect(mgr.get('das')).toBe(167)
+    })
+
+    it('load() keeps defaults when stored value is a JSON array', () => {
+      localStorage.setItem('stakka_settings', '["das", 100]')
+      const mgr = makeManager()
+      expect(mgr.get('das')).toBe(167)
+    })
+
+    it('load() keeps defaults when stored value is a JSON number', () => {
+      localStorage.setItem('stakka_settings', '42')
+      const mgr = makeManager()
+      expect(mgr.get('das')).toBe(167)
+    })
   })
 
   describe('reset', () => {

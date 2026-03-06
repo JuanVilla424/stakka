@@ -10,6 +10,24 @@ export type LeaderboardEntry = {
 const LEADERBOARD_KEY = 'stakka_leaderboard'
 const NAME_KEY = 'stakka_last_name'
 const MAX_ENTRIES = 10
+const MAX_NAME_LENGTH = 30
+
+function isValidEntry(entry: unknown): entry is LeaderboardEntry {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false
+  const e = entry as Record<string, unknown>
+  return (
+    typeof e.name === 'string' &&
+    typeof e.score === 'number' &&
+    isFinite(e.score) &&
+    typeof e.level === 'number' &&
+    isFinite(e.level) &&
+    typeof e.lines === 'number' &&
+    isFinite(e.lines) &&
+    typeof e.time === 'number' &&
+    isFinite(e.time) &&
+    typeof e.date === 'string'
+  )
+}
 
 export class StorageManager {
   private _available: boolean | null = null
@@ -33,8 +51,9 @@ export class StorageManager {
     try {
       const raw = localStorage.getItem(LEADERBOARD_KEY)
       if (!raw) return []
-      const entries = JSON.parse(raw) as LeaderboardEntry[]
-      if (!Array.isArray(entries)) return []
+      const parsed = JSON.parse(raw)
+      if (!Array.isArray(parsed)) return []
+      const entries = parsed.filter(isValidEntry)
       return entries.sort((a, b) => b.score - a.score).slice(0, MAX_ENTRIES)
     } catch {
       return []
@@ -85,7 +104,7 @@ export class StorageManager {
   setLastName(name: string): void {
     if (!this.isAvailable()) return
     try {
-      localStorage.setItem(NAME_KEY, name)
+      localStorage.setItem(NAME_KEY, name.slice(0, MAX_NAME_LENGTH))
     } catch {
       // localStorage unavailable — silently ignore
     }

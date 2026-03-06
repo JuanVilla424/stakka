@@ -55,6 +55,83 @@ describe('StorageManager', () => {
       store['stakka_leaderboard'] = JSON.stringify({ score: 100 })
       expect(storage.getLeaderboard()).toEqual([])
     })
+
+    it('filters out entries with non-string name', () => {
+      store['stakka_leaderboard'] = JSON.stringify([
+        {
+          name: 42,
+          score: 100,
+          level: 1,
+          lines: 10,
+          time: 60,
+          date: '2026-01-01',
+        },
+        makeEntry(200),
+      ])
+      const entries = storage.getLeaderboard()
+      expect(entries).toHaveLength(1)
+      expect(entries[0].score).toBe(200)
+    })
+
+    it('filters out entries with non-number score', () => {
+      store['stakka_leaderboard'] = JSON.stringify([
+        {
+          name: 'A',
+          score: 'high',
+          level: 1,
+          lines: 10,
+          time: 60,
+          date: '2026-01-01',
+        },
+        makeEntry(100),
+      ])
+      const entries = storage.getLeaderboard()
+      expect(entries).toHaveLength(1)
+    })
+
+    it('filters out entries with NaN or Infinity in numeric fields', () => {
+      store['stakka_leaderboard'] = JSON.stringify([
+        {
+          name: 'A',
+          score: null,
+          level: 1,
+          lines: 10,
+          time: 60,
+          date: '2026-01-01',
+        },
+        {
+          name: 'B',
+          score: 500,
+          level: 1,
+          lines: 10,
+          time: 60,
+          date: '2026-01-01',
+        },
+      ])
+      const entries = storage.getLeaderboard()
+      expect(entries).toHaveLength(1)
+      expect(entries[0].score).toBe(500)
+    })
+
+    it('filters out entries missing required fields', () => {
+      store['stakka_leaderboard'] = JSON.stringify([
+        { name: 'A', score: 100 },
+        makeEntry(200),
+      ])
+      expect(storage.getLeaderboard()).toHaveLength(1)
+    })
+
+    it('filters out null and non-object array elements', () => {
+      store['stakka_leaderboard'] = JSON.stringify([
+        null,
+        'string',
+        42,
+        makeEntry(300),
+      ])
+      const entries = storage.getLeaderboard()
+      expect(entries).toHaveLength(1)
+      expect(entries[0].score).toBe(300)
+    })
   })
 
   describe('addEntry', () => {
@@ -157,6 +234,18 @@ describe('StorageManager', () => {
       storage.setLastName('Alice')
       storage.setLastName('Bob')
       expect(storage.getLastName()).toBe('Bob')
+    })
+
+    it('truncates name to 30 characters', () => {
+      const longName = 'A'.repeat(50)
+      storage.setLastName(longName)
+      expect(storage.getLastName()).toBe('A'.repeat(30))
+    })
+
+    it('stores name at exactly 30 characters without truncation', () => {
+      const name30 = 'B'.repeat(30)
+      storage.setLastName(name30)
+      expect(storage.getLastName()).toBe(name30)
     })
   })
 

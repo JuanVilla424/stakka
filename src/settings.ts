@@ -71,6 +71,7 @@ export class SettingsManager {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (!raw) return
       const parsed = JSON.parse(raw) as Partial<GameSettings>
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return
       for (const key of Object.keys(DEFAULTS) as (keyof GameSettings)[]) {
         if (key in parsed) {
           const value = parsed[key]
